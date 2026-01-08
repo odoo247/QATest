@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'QA Test Generator',
-    'version': '17.0.1.0.0',
+    'version': '18.0.1.0.0',
     'category': 'Productivity/Testing',
     'summary': 'AI-Powered Test Generation for Odoo',
     'description': """
