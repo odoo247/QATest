@@ -103,5 +103,4 @@ POST /qa_test/api/generate
 For issues or questions, contact your QA team lead.
 
 ## License
-
 LGPL-3
