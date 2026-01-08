@@ -7,7 +7,6 @@
     'description': """
 QA Test Generator - AI-Powered Automated Testing
 =================================================
-
 This module provides a complete solution for automated test generation
 and execution using AI (Claude) and Robot Framework.
 
