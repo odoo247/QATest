@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Generate Tests Wizard Form -->
+    <record id="view_qa_generate_wizard_form" model="ir.ui.view">
+        <field name="name">qa.test.generate.wizard.form</field>
+        <field name="model">qa.test.generate.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generate Tests">
+                <header>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group invisible="state != 'draft'">
+                        <group string="Specifications">
+                            <field name="spec_ids" widget="many2many_tags" nolabel="1"
+                                   options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <group invisible="state != 'draft'">
+                        <group string="Options">
+                            <field name="analyze_first"/>
+                            <field name="regenerate_existing"/>
+                        </group>
+                        <group string="AI Settings">
+                            <field name="config_id"/>
+                            <field name="test_depth"/>
+                            <field name="include_negative_tests"/>
+                            <field name="include_edge_cases"/>
+                        </group>
+                    </group>
+                    
+                    <!-- Progress -->
+                    <group invisible="state == 'draft'">
+                        <field name="progress_message" readonly="1" nolabel="1"/>
+                    </group>
+                    
+                    <!-- Results -->
+                    <group invisible="state != 'done'">
+                        <div class="alert alert-success">
+                            <h4>Generation Complete!</h4>
+                            <p>Generated <field name="generated_count" readonly="1" class="oe_inline"/> test cases.</p>
+                        </div>
+                    </group>
+                    
+                    <!-- Error -->
+                    <group invisible="state != 'error'">
+                        <div class="alert alert-danger">
+                            <h4>Generation Errors</h4>
+                            <field name="error_message" readonly="1" nolabel="1"/>
+                        </div>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_generate" type="object" string="Generate Tests" 
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_view_generated" type="object" string="View Tests" 
+                            class="btn-primary" invisible="state not in ['done', 'error']"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

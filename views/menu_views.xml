@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root Menu -->
+    <menuitem id="menu_qa_test_root"
+              name="QA Testing"
+              web_icon="qa_test_generator,static/description/icon.png"
+              sequence="100"/>
+    
+    <!-- Test Management Menu -->
+    <menuitem id="menu_qa_test_management"
+              name="Test Management"
+              parent="menu_qa_test_root"
+              sequence="10"/>
+    
+    <menuitem id="menu_qa_test_spec"
+              name="Test Specifications"
+              parent="menu_qa_test_management"
+              action="action_qa_test_spec"
+              sequence="10"/>
+    
+    <menuitem id="menu_qa_test_suite"
+              name="Test Suites"
+              parent="menu_qa_test_management"
+              action="action_qa_test_suite"
+              sequence="20"/>
+    
+    <menuitem id="menu_qa_test_case"
+              name="Test Cases"
+              parent="menu_qa_test_management"
+              action="action_qa_test_case"
+              sequence="30"/>
+    
+    <!-- Execution Menu -->
+    <menuitem id="menu_qa_test_execution"
+              name="Execution"
+              parent="menu_qa_test_root"
+              sequence="20"/>
+    
+    <menuitem id="menu_qa_test_run"
+              name="Test Runs"
+              parent="menu_qa_test_execution"
+              action="action_qa_test_run"
+              sequence="10"/>
+    
+    <menuitem id="menu_qa_test_result"
+              name="Test Results"
+              parent="menu_qa_test_execution"
+              action="action_qa_test_result"
+              sequence="20"/>
+    
+    <!-- Dashboard Menu -->
+    <menuitem id="menu_qa_dashboard"
+              name="Dashboard"
+              parent="menu_qa_test_root"
+              action="action_qa_dashboard"
+              sequence="5"/>
+    
+    <!-- Configuration Menu -->
+    <menuitem id="menu_qa_test_config"
+              name="Configuration"
+              parent="menu_qa_test_root"
+              sequence="90"/>
+    
+    <menuitem id="menu_qa_ai_config"
+              name="AI Settings"
+              parent="menu_qa_test_config"
+              action="action_qa_ai_config"
+              sequence="10"/>
+    
+    <menuitem id="menu_qa_test_tag"
+              name="Tags"
+              parent="menu_qa_test_config"
+              action="action_qa_test_tag"
+              sequence="20"/>
+    
+    <menuitem id="menu_qa_module_analysis"
+              name="Module Analysis"
+              parent="menu_qa_test_config"
+              action="action_qa_module_analysis"
+              sequence="30"/>
+    
+    <menuitem id="menu_qa_git_repository"
+              name="Git Repositories"
+              parent="menu_qa_test_config"
+              action="action_qa_git_repository"
+              sequence="40"/>
+    
+    <menuitem id="menu_qa_module_source"
+              name="Module Sources"
+              parent="menu_qa_test_config"
+              action="action_qa_module_source"
+              sequence="50"/>
+</odoo>

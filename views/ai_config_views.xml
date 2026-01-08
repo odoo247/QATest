@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- AI Config Form View -->
+    <record id="view_qa_ai_config_form" model="ir.ui.view">
+        <field name="name">qa.test.ai.config.form</field>
+        <field name="model">qa.test.ai.config</field>
+        <field name="arch" type="xml">
+            <form string="AI Configuration">
+                <header>
+                    <button name="test_ai_connection" type="object" 
+                            string="Test AI Connection" class="btn-primary"/>
+                    <button name="test_jenkins_connection" type="object" 
+                            string="Test Jenkins" class="btn-secondary"
+                            invisible="not jenkins_enabled"/>
+                    <button name="action_create_output_directories" type="object"
+                            string="Create Directories" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Configuration Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="AI Provider Settings">
+                            <field name="ai_provider"/>
+                            <field name="api_key" password="True"/>
+                            <field name="api_model"/>
+                            <field name="api_endpoint"/>
+                            <field name="max_tokens"/>
+                            <field name="temperature"/>
+                        </group>
+                        <group string="Test Environment">
+                            <field name="test_base_url"/>
+                            <field name="test_db_name"/>
+                            <field name="test_username"/>
+                            <field name="test_password" password="True"/>
+                            <field name="browser"/>
+                            <field name="headless"/>
+                            <field name="timeout"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Jenkins Integration">
+                            <group>
+                                <group>
+                                    <field name="jenkins_enabled"/>
+                                    <field name="jenkins_url" invisible="not jenkins_enabled"/>
+                                    <field name="jenkins_user" invisible="not jenkins_enabled"/>
+                                    <field name="jenkins_token" password="True" invisible="not jenkins_enabled"/>
+                                    <field name="jenkins_job_name" invisible="not jenkins_enabled"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Output Settings">
+                            <group>
+                                <group>
+                                    <field name="output_path"/>
+                                    <field name="report_path"/>
+                                    <field name="screenshot_on_failure"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Notifications">
+                            <group>
+                                <group>
+                                    <field name="notify_on_complete"/>
+                                    <field name="notify_on_failure"/>
+                                    <field name="notification_email"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- AI Config Tree View -->
+    <record id="view_qa_ai_config_tree" model="ir.ui.view">
+        <field name="name">qa.test.ai.config.tree</field>
+        <field name="model">qa.test.ai.config</field>
+        <field name="arch" type="xml">
+            <tree string="AI Configurations">
+                <field name="name"/>
+                <field name="ai_provider"/>
+                <field name="api_model"/>
+                <field name="test_base_url"/>
+                <field name="jenkins_enabled"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Action -->
+    <record id="action_qa_ai_config" model="ir.actions.act_window">
+        <field name="name">AI Configuration</field>
+        <field name="res_model">qa.test.ai.config</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure AI settings for test generation
+            </p>
+            <p>
+                Enter your Anthropic API key and configure test environment settings.
+            </p>
+        </field>
+    </record>
+</odoo>

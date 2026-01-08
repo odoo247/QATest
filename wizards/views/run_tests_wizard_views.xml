@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Run Tests Wizard Form -->
+    <record id="view_qa_run_wizard_form" model="ir.ui.view">
+        <field name="name">qa.test.run.wizard.form</field>
+        <field name="model">qa.test.run.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Run Tests">
+                <sheet>
+                    <group>
+                        <group string="Run Details">
+                            <field name="name"/>
+                            <field name="suite_id"/>
+                            <field name="config_id"/>
+                        </group>
+                        <group string="Environment">
+                            <field name="environment"/>
+                            <field name="base_url"/>
+                            <field name="execution_mode"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Options">
+                            <field name="headless"/>
+                            <field name="parallel"/>
+                            <field name="fail_fast"/>
+                        </group>
+                        <group string="Tag Filters">
+                            <field name="include_tags" placeholder="smoke, critical"/>
+                            <field name="exclude_tags" placeholder="slow, manual"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Test Cases">
+                            <div class="mb-2">
+                                <button name="action_select_all" type="object" 
+                                        string="Select All Ready" class="btn-secondary btn-sm"/>
+                                <button name="action_select_failed" type="object" 
+                                        string="Select Failed" class="btn-secondary btn-sm"/>
+                            </div>
+                            <field name="test_case_ids">
+                                <tree>
+                                    <field name="test_id"/>
+                                    <field name="name"/>
+                                    <field name="category"/>
+                                    <field name="tags"/>
+                                    <field name="state" widget="badge"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button name="action_run" type="object" string="Run Tests" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

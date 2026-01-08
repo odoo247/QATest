@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard Action -->
+    <record id="action_qa_dashboard" model="ir.actions.client">
+        <field name="name">QA Dashboard</field>
+        <field name="tag">qa_test_dashboard</field>
+    </record>
+    
+    <!-- Dashboard Template -->
+    <template id="qa_dashboard_template" name="QA Test Dashboard">
+        <div class="qa-dashboard container-fluid">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2>
+                        <i class="fa fa-tachometer"/> QA Testing Dashboard
+                    </h2>
+                </div>
+            </div>
+            
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Specs</h5>
+                            <h2 class="card-text" id="total-specs">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Test Cases</h5>
+                            <h2 class="card-text" id="total-tests">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Pass Rate</h5>
+                            <h2 class="card-text" id="pass-rate">0%</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <h5 class="card-title">Pending</h5>
+                            <h2 class="card-text" id="pending-tests">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-primary me-2" id="btn-new-spec">
+                                <i class="fa fa-plus"/> New Specification
+                            </button>
+                            <button class="btn btn-success me-2" id="btn-run-all">
+                                <i class="fa fa-play"/> Run All Tests
+                            </button>
+                            <button class="btn btn-info me-2" id="btn-view-results">
+                                <i class="fa fa-list"/> View Results
+                            </button>
+                            <button class="btn btn-secondary" id="btn-config">
+                                <i class="fa fa-cog"/> Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Recent Test Runs</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm" id="recent-runs">
+                                <thead>
+                                    <tr>
+                                        <th>Run</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Pass Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Failed Tests</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm" id="failed-tests">
+                                <thead>
+                                    <tr>
+                                        <th>Test</th>
+                                        <th>Last Run</th>
+                                        <th>Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</odoo>

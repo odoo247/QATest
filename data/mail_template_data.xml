@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Test Run Complete Email Template -->
+        <record id="mail_template_test_run_complete" model="mail.template">
+            <field name="name">QA Test Run Complete</field>
+            <field name="model_id" ref="model_qa_test_run"/>
+            <field name="subject">QA Test Run: {{ object.name }} - {{ object.state|upper }}</field>
+            <field name="email_from">{{ (object.env.company.email or 'noreply@example.com') }}</field>
+            <field name="email_to">{{ object.config_id.notification_email or '' }}</field>
+            <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #333;">QA Test Run Complete</h2>
+    
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="margin-top: 0;">{{ object.name }}</h3>
+        <p><strong>Status:</strong> 
+            <span style="color: {% if object.state == 'passed' %}green{% elif object.state == 'failed' %}red{% else %}orange{% endif %};">
+                {{ object.state|upper }}
+            </span>
+        </p>
+        <p><strong>Duration:</strong> {{ object.duration_display }}</p>
+    </div>
+    
+    <h3>Results Summary</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="background: #e9e9e9;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Total Tests</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{ object.total_tests }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; color: green;"><strong>Passed</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{ object.passed_tests }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; color: red;"><strong>Failed</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{ object.failed_tests }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd; color: orange;"><strong>Errors</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{ object.error_tests }}</td>
+        </tr>
+        <tr style="background: #e9e9e9;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Pass Rate</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;">{{ "%.1f"|format(object.pass_rate) }}%</td>
+        </tr>
+    </table>
+    
+    {% if object.failed_tests > 0 %}
+    <h3 style="color: red;">Failed Tests</h3>
+    <ul>
+        {% for result in object.result_ids.filtered(lambda r: r.status in ['failed', 'error']) %}
+        <li>
+            <strong>{{ result.test_case_id.name }}</strong>
+            <br/><small>{{ result.message or 'No message' }}</small>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
+    <p style="margin-top: 20px;">
+        <a href="{{ object.env['ir.config_parameter'].sudo().get_param('web.base.url') }}/web#id={{ object.id }}&amp;model=qa.test.run&amp;view_type=form" 
+           style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            View Full Report
+        </a>
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;"/>
+    <p style="color: #666; font-size: 12px;">
+        This is an automated message from QA Test Generator.
+    </p>
+</div>
+            ]]></field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+    </data>
+</odoo>

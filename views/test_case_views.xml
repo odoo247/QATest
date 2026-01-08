@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Test Case Form View -->
+    <record id="view_qa_test_case_form" model="ir.ui.view">
+        <field name="name">qa.test.case.form</field>
+        <field name="model">qa.test.case</field>
+        <field name="arch" type="xml">
+            <form string="Test Case">
+                <header>
+                    <button name="action_run_test" type="object" 
+                            string="Run Test" class="btn-primary"
+                            invisible="state not in ['ready', 'passed', 'failed', 'error']"/>
+                    <button name="action_mark_ready" type="object" 
+                            string="Mark Ready" class="btn-secondary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_export_robot" type="object" 
+                            string="Export .robot" class="btn-secondary"/>
+                    <button name="action_regenerate" type="object" 
+                            string="Regenerate" class="btn-secondary"
+                            invisible="not spec_id"/>
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="draft,ready,passed,failed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_results" type="object" 
+                                class="oe_stat_button" icon="fa-list">
+                            <field name="total_runs" widget="statinfo" string="Runs"/>
+                        </button>
+                        <button name="action_view_screenshot" type="object" 
+                                class="oe_stat_button" icon="fa-image"
+                                invisible="not last_screenshot">
+                            <span>Screenshot</span>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="AI Generated" bg_color="bg-info"
+                            invisible="not ai_generated"/>
+                    <widget name="web_ribbon" title="Modified" bg_color="bg-warning"
+                            invisible="not manually_modified"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="test_id" class="oe_inline" readonly="1"/>
+                            <span> - </span>
+                            <field name="name" class="oe_inline" placeholder="Test Case Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="spec_id" readonly="1"/>
+                            <field name="suite_id" readonly="1"/>
+                            <field name="category"/>
+                            <field name="priority"/>
+                        </group>
+                        <group>
+                            <field name="tags"/>
+                            <field name="last_run_date" readonly="1"/>
+                            <field name="last_run_duration" readonly="1"/>
+                            <field name="pass_rate" readonly="1" widget="progressbar"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Robot Code" name="code">
+                            <field name="robot_code" widget="text" 
+                                   placeholder="Robot Framework test code..."/>
+                        </page>
+                        <page string="Preview" name="preview">
+                            <field name="robot_code_preview" readonly="1"/>
+                        </page>
+                        <page string="Documentation" name="docs">
+                            <group>
+                                <field name="description"/>
+                                <field name="preconditions"/>
+                                <field name="expected_result"/>
+                            </group>
+                            <group>
+                                <field name="setup_keyword"/>
+                                <field name="teardown_keyword"/>
+                            </group>
+                        </page>
+                        <page string="Statistics" name="stats">
+                            <group>
+                                <group>
+                                    <field name="total_runs" readonly="1"/>
+                                    <field name="pass_count" readonly="1"/>
+                                    <field name="fail_count" readonly="1"/>
+                                    <field name="avg_duration" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="ai_generated" readonly="1"/>
+                                    <field name="ai_model" readonly="1"/>
+                                    <field name="generation_date" readonly="1"/>
+                                    <field name="manually_modified" readonly="1"/>
+                                </group>
+                            </group>
+                            <field name="modification_notes" invisible="not manually_modified"/>
+                        </page>
+                        <page string="Last Error" name="error" 
+                              invisible="state not in ['failed', 'error']">
+                            <group>
+                                <field name="last_error_message" readonly="1"/>
+                            </group>
+                            <group string="Screenshot" invisible="not last_screenshot">
+                                <field name="last_screenshot" widget="image" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Test Steps" name="steps">
+                            <field name="step_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="action"/>
+                                    <field name="locator_type"/>
+                                    <field name="locator_value"/>
+                                    <field name="input_value"/>
+                                    <field name="robot_line" readonly="1"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Test Case Tree View -->
+    <record id="view_qa_test_case_tree" model="ir.ui.view">
+        <field name="name">qa.test.case.tree</field>
+        <field name="model">qa.test.case</field>
+        <field name="arch" type="xml">
+            <tree string="Test Cases" default_order="sequence">
+                <field name="sequence" widget="handle"/>
+                <field name="test_id"/>
+                <field name="name"/>
+                <field name="spec_id"/>
+                <field name="category"/>
+                <field name="priority"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'passed'"
+                       decoration-danger="state in ['failed', 'error']"
+                       decoration-info="state == 'ready'"
+                       decoration-warning="state == 'running'"/>
+                <field name="pass_rate" widget="progressbar"/>
+                <field name="last_run_date"/>
+                <field name="total_runs"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Test Case Kanban View -->
+    <record id="view_qa_test_case_kanban" model="ir.ui.view">
+        <field name="name">qa.test.case.kanban</field>
+        <field name="model">qa.test.case</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state">
+                <field name="name"/>
+                <field name="state"/>
+                <field name="pass_rate"/>
+                <field name="test_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_card oe_kanban_global_click">
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_title">
+                                    <field name="test_id"/> - <field name="name"/>
+                                </div>
+                                <div class="o_kanban_record_body">
+                                    <field name="spec_id"/>
+                                    <div class="mt-2">
+                                        <span>Pass Rate: </span>
+                                        <field name="pass_rate" widget="progressbar"/>
+                                    </div>
+                                </div>
+                                <div class="o_kanban_record_bottom">
+                                    <div class="oe_kanban_bottom_left">
+                                        <field name="category"/>
+                                    </div>
+                                    <div class="oe_kanban_bottom_right">
+                                        <field name="priority" widget="priority"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    
+    <!-- Test Case Search View -->
+    <record id="view_qa_test_case_search" model="ir.ui.view">
+        <field name="name">qa.test.case.search</field>
+        <field name="model">qa.test.case</field>
+        <field name="arch" type="xml">
+            <search string="Search Test Cases">
+                <field name="name"/>
+                <field name="test_id"/>
+                <field name="spec_id"/>
+                <field name="suite_id"/>
+                <field name="tags"/>
+                <filter string="Ready" name="ready" domain="[('state', '=', 'ready')]"/>
+                <filter string="Passed" name="passed" domain="[('state', '=', 'passed')]"/>
+                <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
+                <filter string="Errors" name="error" domain="[('state', '=', 'error')]"/>
+                <separator/>
+                <filter string="AI Generated" name="ai" domain="[('ai_generated', '=', True)]"/>
+                <filter string="Modified" name="modified" domain="[('manually_modified', '=', True)]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Specification" name="group_spec" context="{'group_by': 'spec_id'}"/>
+                    <filter string="Suite" name="group_suite" context="{'group_by': 'suite_id'}"/>
+                    <filter string="Category" name="group_category" context="{'group_by': 'category'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    
+    <!-- Screenshot Popup View -->
+    <record id="view_test_case_screenshot_popup" model="ir.ui.view">
+        <field name="name">qa.test.case.screenshot.popup</field>
+        <field name="model">qa.test.case</field>
+        <field name="arch" type="xml">
+            <form string="Screenshot">
+                <sheet>
+                    <group>
+                        <field name="last_screenshot" widget="image" readonly="1" class="img-fluid"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Action -->
+    <record id="action_qa_test_case" model="ir.actions.act_window">
+        <field name="name">Test Cases</field>
+        <field name="res_model">qa.test.case</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="view_qa_test_case_search"/>
+        <field name="context">{'search_default_ready': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No test cases yet
+            </p>
+            <p>
+                Test cases are generated from Test Specifications using AI.
+                Create a specification first and click "Generate Tests".
+            </p>
+        </field>
+    </record>
+    
+    <!-- Sequence -->
+    <record id="seq_qa_test_case" model="ir.sequence">
+        <field name="name">Test Case Sequence</field>
+        <field name="code">qa.test.case</field>
+        <field name="prefix">TC</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

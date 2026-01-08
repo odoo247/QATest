@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Test Result Form View -->
+    <record id="view_qa_test_result_form" model="ir.ui.view">
+        <field name="name">qa.test.result.form</field>
+        <field name="model">qa.test.result</field>
+        <field name="arch" type="xml">
+            <form string="Test Result">
+                <header>
+                    <button name="action_rerun_test" type="object" 
+                            string="Re-run Test" class="btn-primary"/>
+                    <button name="action_view_test_case" type="object" 
+                            string="View Test Case" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="status_icon" readonly="1" class="oe_inline"/>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="test_case_id" readonly="1"/>
+                            <field name="run_id" readonly="1"/>
+                            <field name="status" widget="badge"
+                                   decoration-success="status == 'passed'"
+                                   decoration-danger="status in ['failed', 'error']"/>
+                        </group>
+                        <group>
+                            <field name="execution_date" readonly="1"/>
+                            <field name="duration_display" readonly="1"/>
+                            <field name="browser" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Details" name="details">
+                            <group string="Message" invisible="not message">
+                                <field name="message" nolabel="1" readonly="1"/>
+                            </group>
+                            <group string="Error Details" invisible="status not in ['failed', 'error']">
+                                <field name="error_type" readonly="1"/>
+                                <field name="error_traceback" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Log" name="log">
+                            <field name="log" readonly="1" widget="text"/>
+                        </page>
+                        <page string="Screenshot" name="screenshot" invisible="not screenshot">
+                            <group>
+                                <field name="screenshot" widget="image" readonly="1"/>
+                            </group>
+                            <button name="action_download_screenshot" type="object"
+                                    string="Download Screenshot" icon="fa-download"/>
+                        </page>
+                        <page string="Step Results" name="steps" invisible="not step_result_ids">
+                            <field name="step_result_ids" readonly="1">
+                                <tree>
+                                    <field name="sequence"/>
+                                    <field name="name"/>
+                                    <field name="status" widget="badge"
+                                           decoration-success="status == 'passed'"
+                                           decoration-danger="status in ['failed', 'error']"/>
+                                    <field name="duration"/>
+                                    <field name="message"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Test Result Tree View -->
+    <record id="view_qa_test_result_tree" model="ir.ui.view">
+        <field name="name">qa.test.result.tree</field>
+        <field name="model">qa.test.result</field>
+        <field name="arch" type="xml">
+            <tree string="Test Results" decoration-success="status == 'passed'"
+                  decoration-danger="status in ['failed', 'error']"
+                  decoration-muted="status == 'skipped'">
+                <field name="execution_date"/>
+                <field name="test_case_id"/>
+                <field name="run_id"/>
+                <field name="status" widget="badge"/>
+                <field name="duration_display"/>
+                <field name="message" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Test Result Search View -->
+    <record id="view_qa_test_result_search" model="ir.ui.view">
+        <field name="name">qa.test.result.search</field>
+        <field name="model">qa.test.result</field>
+        <field name="arch" type="xml">
+            <search string="Search Results">
+                <field name="test_case_id"/>
+                <field name="run_id"/>
+                <field name="message"/>
+                <filter string="Passed" name="passed" domain="[('status', '=', 'passed')]"/>
+                <filter string="Failed" name="failed" domain="[('status', '=', 'failed')]"/>
+                <filter string="Errors" name="error" domain="[('status', '=', 'error')]"/>
+                <separator/>
+                <filter string="Today" name="today" domain="[('execution_date', '>=', datetime.datetime.combine(context_today(), datetime.time(0,0,0)))]"/>
+                <filter string="This Week" name="week" domain="[('execution_date', '>=', (context_today() - datetime.timedelta(days=7)))]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_status" context="{'group_by': 'status'}"/>
+                    <filter string="Test Case" name="group_test" context="{'group_by': 'test_case_id'}"/>
+                    <filter string="Run" name="group_run" context="{'group_by': 'run_id'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by': 'execution_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    
+    <!-- Log Popup View -->
+    <record id="view_test_result_log_popup" model="ir.ui.view">
+        <field name="name">qa.test.result.log.popup</field>
+        <field name="model">qa.test.result</field>
+        <field name="arch" type="xml">
+            <form string="Execution Log">
+                <sheet>
+                    <field name="log" readonly="1" widget="text"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Screenshot Popup View -->
+    <record id="view_test_result_screenshot_popup" model="ir.ui.view">
+        <field name="name">qa.test.result.screenshot.popup</field>
+        <field name="model">qa.test.result</field>
+        <field name="arch" type="xml">
+            <form string="Screenshot">
+                <sheet>
+                    <field name="screenshot" widget="image" readonly="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Action -->
+    <record id="action_qa_test_result" model="ir.actions.act_window">
+        <field name="name">Test Results</field>
+        <field name="res_model">qa.test.result</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_qa_test_result_search"/>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+    
+    <!-- Test Run Form View -->
+    <record id="view_qa_test_run_form" model="ir.ui.view">
+        <field name="name">qa.test.run.form</field>
+        <field name="model">qa.test.run</field>
+        <field name="arch" type="xml">
+            <form string="Test Run">
+                <header>
+                    <button name="action_execute" type="object" 
+                            string="Execute" class="btn-primary"
+                            invisible="state != 'pending'"/>
+                    <button name="action_execute_jenkins" type="object" 
+                            string="Run via Jenkins" class="btn-secondary"
+                            invisible="state != 'pending'"/>
+                    <button name="action_cancel" type="object" 
+                            string="Cancel" class="btn-secondary"
+                            invisible="state != 'running'"/>
+                    <button name="action_rerun_failed" type="object" 
+                            string="Re-run Failed" class="btn-secondary"
+                            invisible="failed_tests == 0"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_results" type="object" 
+                                class="oe_stat_button" icon="fa-list">
+                            <field name="total_tests" widget="statinfo" string="Tests"/>
+                        </button>
+                        <button name="action_view_failed" type="object" 
+                                class="oe_stat_button" icon="fa-times-circle"
+                                invisible="failed_tests == 0">
+                            <field name="failed_tests" widget="statinfo" string="Failed"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="suite_id"/>
+                            <field name="environment"/>
+                            <field name="triggered_by"/>
+                            <field name="triggered_by_user_id"/>
+                        </group>
+                        <group>
+                            <field name="start_time" readonly="1"/>
+                            <field name="end_time" readonly="1"/>
+                            <field name="duration_display" readonly="1"/>
+                            <field name="pass_rate" widget="progressbar" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Test Cases" name="tests">
+                            <field name="test_case_ids" widget="many2many_tags"/>
+                        </page>
+                        <page string="Results" name="results">
+                            <group>
+                                <group>
+                                    <field name="passed_tests" readonly="1"/>
+                                    <field name="failed_tests" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="error_tests" readonly="1"/>
+                                    <field name="skipped_tests" readonly="1"/>
+                                </group>
+                            </group>
+                            <field name="result_ids" readonly="1">
+                                <tree decoration-success="status == 'passed'"
+                                      decoration-danger="status in ['failed', 'error']">
+                                    <field name="test_case_id"/>
+                                    <field name="status" widget="badge"/>
+                                    <field name="duration_display"/>
+                                    <field name="message"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Log" name="log">
+                            <field name="log" readonly="1"/>
+                            <field name="error_message" readonly="1" invisible="not error_message"
+                                   class="text-danger"/>
+                        </page>
+                        <page string="Jenkins" name="jenkins" invisible="not jenkins_build_number">
+                            <group>
+                                <field name="jenkins_build_number" readonly="1"/>
+                                <field name="jenkins_build_url" widget="url" readonly="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Test Run Tree View -->
+    <record id="view_qa_test_run_tree" model="ir.ui.view">
+        <field name="name">qa.test.run.tree</field>
+        <field name="model">qa.test.run</field>
+        <field name="arch" type="xml">
+            <tree string="Test Runs" decoration-success="state == 'passed'"
+                  decoration-danger="state in ['failed', 'error']">
+                <field name="name"/>
+                <field name="suite_id"/>
+                <field name="start_time"/>
+                <field name="duration_display"/>
+                <field name="total_tests"/>
+                <field name="passed_tests"/>
+                <field name="failed_tests"/>
+                <field name="pass_rate" widget="progressbar"/>
+                <field name="state" widget="badge"/>
+                <field name="triggered_by"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Test Run Action -->
+    <record id="action_qa_test_run" model="ir.actions.act_window">
+        <field name="name">Test Runs</field>
+        <field name="res_model">qa.test.run</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    
+    <!-- Module Analysis Views -->
+    <record id="view_qa_module_analysis_form" model="ir.ui.view">
+        <field name="name">qa.module.analysis.form</field>
+        <field name="model">qa.module.analysis</field>
+        <field name="arch" type="xml">
+            <form string="Module Analysis">
+                <header>
+                    <button name="action_analyze" type="object" 
+                            string="Analyze" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="module_id"/>
+                            <field name="analysis_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="model_count" readonly="1"/>
+                            <field name="view_count" readonly="1"/>
+                            <field name="field_count" readonly="1"/>
+                            <field name="button_count" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Models">
+                            <field name="models_summary" readonly="1"/>
+                        </page>
+                        <page string="Views">
+                            <field name="views_summary" readonly="1"/>
+                        </page>
+                        <page string="Fields">
+                            <field name="fields_summary" readonly="1"/>
+                        </page>
+                        <page string="Buttons">
+                            <field name="buttons_summary" readonly="1"/>
+                        </page>
+                    </notebook>
+                    <field name="error_message" readonly="1" invisible="not error_message"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <record id="view_qa_module_analysis_tree" model="ir.ui.view">
+        <field name="name">qa.module.analysis.tree</field>
+        <field name="model">qa.module.analysis</field>
+        <field name="arch" type="xml">
+            <tree string="Module Analyses">
+                <field name="module_id"/>
+                <field name="analysis_date"/>
+                <field name="model_count"/>
+                <field name="view_count"/>
+                <field name="state" widget="badge"/>
+            </tree>
+        </field>
+    </record>
+    
+    <record id="action_qa_module_analysis" model="ir.actions.act_window">
+        <field name="name">Module Analysis</field>
+        <field name="res_model">qa.module.analysis</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

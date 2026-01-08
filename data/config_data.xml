@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Default AI Configuration -->
+        <record id="default_ai_config" model="qa.test.ai.config">
+            <field name="name">Default Configuration</field>
+            <field name="ai_provider">anthropic</field>
+            <field name="api_key">YOUR_API_KEY_HERE</field>
+            <field name="api_model">claude-sonnet-4-20250514</field>
+            <field name="api_endpoint">https://api.anthropic.com/v1/messages</field>
+            <field name="max_tokens">4096</field>
+            <field name="temperature">0.3</field>
+            <field name="test_base_url">http://localhost:8069</field>
+            <field name="test_db_name">odoo</field>
+            <field name="test_username">admin</field>
+            <field name="test_password">admin</field>
+            <field name="browser">chrome</field>
+            <field name="headless" eval="True"/>
+            <field name="timeout">30</field>
+            <field name="screenshot_on_failure" eval="True"/>
+            <field name="output_path">/tmp/qa_test_generator/tests</field>
+            <field name="report_path">/tmp/qa_test_generator/reports</field>
+            <field name="notify_on_complete" eval="True"/>
+            <field name="active" eval="True"/>
+        </record>
+        
+        <!-- Default Tags -->
+        <record id="tag_smoke" model="qa.test.tag">
+            <field name="name">smoke</field>
+            <field name="color">1</field>
+            <field name="description">Quick sanity tests</field>
+        </record>
+        
+        <record id="tag_regression" model="qa.test.tag">
+            <field name="name">regression</field>
+            <field name="color">2</field>
+            <field name="description">Full regression tests</field>
+        </record>
+        
+        <record id="tag_critical" model="qa.test.tag">
+            <field name="name">critical</field>
+            <field name="color">4</field>
+            <field name="description">Critical functionality tests</field>
+        </record>
+        
+        <record id="tag_e2e" model="qa.test.tag">
+            <field name="name">e2e</field>
+            <field name="color">5</field>
+            <field name="description">End-to-end workflow tests</field>
+        </record>
+        
+        <record id="tag_integration" model="qa.test.tag">
+            <field name="name">integration</field>
+            <field name="color">3</field>
+            <field name="description">Integration tests</field>
+        </record>
+    </data>
+</odoo>
