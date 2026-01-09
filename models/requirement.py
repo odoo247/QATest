@@ -80,7 +80,7 @@ class QARequirement(models.Model):
         ('passed', 'Passed'),
         ('failed', 'Failed'),
         ('not_run', 'Not Run'),
-    ], compute='_compute_last_result', store=True)
+    ], compute='_compute_last_result')
 
     _sql_constraints = [
         ('code_customer_unique', 'UNIQUE(code, customer_id)', 
