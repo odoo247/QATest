@@ -200,6 +200,8 @@
             <search string="Search Test Cases">
                 <field name="name"/>
                 <field name="test_id"/>
+                <field name="customer_id"/>
+                <field name="requirement_id"/>
                 <field name="spec_id"/>
                 <field name="suite_id"/>
                 <field name="tags"/>
@@ -208,14 +210,20 @@
                 <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
                 <filter string="Errors" name="error" domain="[('state', '=', 'error')]"/>
                 <separator/>
+                <filter string="Acceptance Tests" name="acceptance" domain="[('test_type', '=', 'acceptance')]"/>
+                <filter string="Regression Tests" name="regression" domain="[('test_type', '=', 'regression')]"/>
+                <separator/>
                 <filter string="AI Generated" name="ai" domain="[('ai_generated', '=', True)]"/>
                 <filter string="Modified" name="modified" domain="[('manually_modified', '=', True)]"/>
                 <separator/>
                 <group expand="0" string="Group By">
+                    <filter string="Customer" name="group_customer" context="{'group_by': 'customer_id'}"/>
+                    <filter string="Requirement" name="group_requirement" context="{'group_by': 'requirement_id'}"/>
                     <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
                     <filter string="Specification" name="group_spec" context="{'group_by': 'spec_id'}"/>
                     <filter string="Suite" name="group_suite" context="{'group_by': 'suite_id'}"/>
                     <filter string="Category" name="group_category" context="{'group_by': 'category'}"/>
+                    <filter string="Test Type" name="group_type" context="{'group_by': 'test_type'}"/>
                 </group>
             </search>
         </field>

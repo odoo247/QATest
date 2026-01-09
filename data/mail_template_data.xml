@@ -73,5 +73,53 @@
             ]]></field>
             <field name="auto_delete" eval="True"/>
         </record>
+        
+        <!-- Health Check Alert Email Template -->
+        <record id="mail_template_health_alert" model="mail.template">
+            <field name="name">QA Health Check Alert</field>
+            <field name="model_id" ref="model_qa_health_check"/>
+            <field name="subject">[QA Alert] {{ object.customer_id.code }}: {{ object.name }} - {{ object.status|upper }}</field>
+            <field name="email_from">{{ (object.env.company.email or 'noreply@example.com') }}</field>
+            <field name="email_to">{{ object.alert_email or '' }}</field>
+            <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: {% if object.status == 'critical' %}#dc3545{% elif object.status == 'warning' %}#ffc107{% else %}#28a745{% endif %};">
+        Health Check Alert: {{ object.status|upper }}
+    </h2>
+    
+    <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="margin-top: 0;">{{ object.name }}</h3>
+        <p><strong>Customer:</strong> {{ object.customer_id.name }}</p>
+        <p><strong>Check Type:</strong> {{ object.check_type }}</p>
+        <p><strong>Status:</strong> 
+            <span style="color: {% if object.status == 'critical' %}#dc3545{% elif object.status == 'warning' %}#ffc107{% else %}#28a745{% endif %}; font-weight: bold;">
+                {{ object.status|upper }}
+            </span>
+        </p>
+        <p><strong>Time:</strong> {{ object.last_check }}</p>
+    </div>
+    
+    <h3>Details</h3>
+    <p><strong>Message:</strong></p>
+    <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">{{ object.last_message or 'No details available' }}</pre>
+    
+    <p><strong>Value:</strong> {{ object.last_value or 'N/A' }}</p>
+    <p><strong>Consecutive Failures:</strong> {{ object.consecutive_failures }}</p>
+    
+    <p style="margin-top: 20px;">
+        <a href="{{ object.env['ir.config_parameter'].sudo().get_param('web.base.url') }}/web#id={{ object.id }}&amp;model=qa.health.check&amp;view_type=form" 
+           style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            View Health Check
+        </a>
+    </p>
+    
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;"/>
+    <p style="color: #666; font-size: 12px;">
+        This is an automated alert from QA Test Generator Health Monitoring.
+    </p>
+</div>
+            ]]></field>
+            <field name="auto_delete" eval="True"/>
+        </record>
     </data>
 </odoo>

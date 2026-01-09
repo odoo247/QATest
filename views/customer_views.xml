@@ -44,6 +44,7 @@
                         </group>
                         <group string="Technical">
                             <field name="odoo_version"/>
+                            <field name="user_id"/>
                             <field name="pass_rate" widget="progressbar"/>
                             <field name="last_run_date"/>
                             <field name="last_run_status" widget="badge"

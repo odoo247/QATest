@@ -33,7 +33,7 @@
                             <field name="expected_result"/>
                         </page>
                         <page string="Robot Code" name="robot">
-                            <field name="robot_code" widget="ace" options="{'mode': 'robot'}"/>
+                            <field name="robot_code" />
                         </page>
                         <page string="Parameters" name="params">
                             <field name="parameter_ids">

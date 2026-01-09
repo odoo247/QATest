@@ -16,6 +16,11 @@ class QACustomer(models.Model):
                        help='Short code for the customer (e.g., ACME)')
     active = fields.Boolean(default=True)
     
+    # Responsible User
+    user_id = fields.Many2one('res.users', string='Account Manager',
+                              default=lambda self: self.env.user,
+                              help='User responsible for this customer')
+    
     # Contact Info
     contact_name = fields.Char(string='Contact Person')
     contact_email = fields.Char(string='Contact Email')

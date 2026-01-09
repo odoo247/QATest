@@ -132,11 +132,15 @@ class QATestCase(models.Model):
             else:
                 record.robot_code_preview = '<p>No code generated yet.</p>'
 
-    @api.depends('result_ids')
+    @api.depends('result_ids', 'result_ids.status')
     def _compute_last_run(self):
         for record in self:
             last_result = record.result_ids.sorted('execution_date', reverse=True)[:1]
             record.last_run_result_id = last_result.id if last_result else False
+            if last_result and last_result.status in ('passed', 'failed'):
+                record.last_result = last_result.status
+            else:
+                record.last_result = False
 
     @api.depends('result_ids', 'result_ids.status')
     def _compute_statistics(self):

@@ -75,7 +75,7 @@
                     
                     <!-- Custom Check Fields -->
                     <group string="Custom Check" invisible="check_type not in ('custom', 'performance')">
-                        <field name="check_query" placeholder="# Python code here..." widget="ace" options="{'mode': 'python'}"/>
+                        <field name="check_query" placeholder="# Python code here..." />
                     </group>
                     
                     <!-- Alert Settings -->
