@@ -131,7 +131,7 @@ class QATestSuite(models.Model):
             'name': 'Test Specifications',
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.spec',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('suite_id', '=', self.id)],
             'context': {'default_suite_id': self.id},
         }
@@ -142,7 +142,7 @@ class QATestSuite(models.Model):
             'name': 'Test Cases',
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.case',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('suite_id', '=', self.id)],
             'context': {'default_suite_id': self.id},
         }
@@ -153,7 +153,7 @@ class QATestSuite(models.Model):
             'name': 'Test Runs',
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.run',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('suite_id', '=', self.id)],
             'context': {'default_suite_id': self.id},
         }

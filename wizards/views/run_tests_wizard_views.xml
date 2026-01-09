@@ -39,13 +39,13 @@
                                         string="Select Failed" class="btn-secondary btn-sm"/>
                             </div>
                             <field name="test_case_ids">
-                                <tree>
+                                <list>
                                     <field name="test_id"/>
                                     <field name="name"/>
                                     <field name="category"/>
                                     <field name="tags"/>
                                     <field name="state" widget="badge"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>

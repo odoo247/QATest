@@ -59,18 +59,18 @@
                     <notebook>
                         <page string="Specifications" name="specs">
                             <field name="spec_ids">
-                                <tree>
+                                <list>
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="module_id"/>
                                     <field name="test_case_count"/>
                                     <field name="state" widget="badge"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Test Cases" name="tests">
                             <field name="test_case_ids">
-                                <tree>
+                                <list>
                                     <field name="test_id"/>
                                     <field name="name"/>
                                     <field name="category"/>
@@ -78,7 +78,7 @@
                                            decoration-success="state == 'passed'"
                                            decoration-danger="state in ['failed', 'error']"/>
                                     <field name="pass_rate" widget="progressbar"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Execution Settings" name="settings">
@@ -127,7 +127,7 @@
         <field name="name">qa.test.suite.tree</field>
         <field name="model">qa.test.suite</field>
         <field name="arch" type="xml">
-            <tree string="Test Suites">
+            <list string="Test Suites">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="spec_count"/>
@@ -140,7 +140,7 @@
                 <field name="pass_rate" widget="progressbar"/>
                 <field name="scheduled"/>
                 <field name="state" widget="badge"/>
-            </tree>
+            </list>
         </field>
     </record>
     
@@ -148,7 +148,7 @@
     <record id="action_qa_test_suite" model="ir.actions.act_window">
         <field name="name">Test Suites</field>
         <field name="res_model">qa.test.suite</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Create your first test suite

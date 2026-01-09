@@ -54,7 +54,7 @@
         <field name="name">qa.git.repository.tree</field>
         <field name="model">qa.git.repository</field>
         <field name="arch" type="xml">
-            <tree string="Git Repositories">
+            <list string="Git Repositories">
                 <field name="name"/>
                 <field name="provider"/>
                 <field name="repo_url"/>
@@ -62,7 +62,7 @@
                 <field name="auth_type"/>
                 <field name="last_sync"/>
                 <field name="active"/>
-            </tree>
+            </list>
         </field>
     </record>
     
@@ -70,7 +70,7 @@
     <record id="action_qa_git_repository" model="ir.actions.act_window">
         <field name="name">Git Repositories</field>
         <field name="res_model">qa.git.repository</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Configure your first Git repository
@@ -114,12 +114,12 @@
         <field name="name">qa.module.source.tree</field>
         <field name="model">qa.module.source</field>
         <field name="arch" type="xml">
-            <tree string="Module Sources" editable="bottom">
+            <list string="Module Sources" editable="bottom">
                 <field name="module_id"/>
                 <field name="repository_id"/>
                 <field name="branch"/>
                 <field name="last_fetch"/>
-            </tree>
+            </list>
         </field>
     </record>
     
@@ -127,7 +127,7 @@
     <record id="action_qa_module_source" model="ir.actions.act_window">
         <field name="name">Module Sources</field>
         <field name="res_model">qa.module.source</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Link modules to their source code repositories

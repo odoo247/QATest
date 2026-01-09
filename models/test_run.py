@@ -252,7 +252,7 @@ class QATestRun(models.Model):
             'name': 'Test Results',
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.result',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('run_id', '=', self.id)],
         }
 
@@ -262,7 +262,7 @@ class QATestRun(models.Model):
             'name': 'Failed Tests',
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.result',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('run_id', '=', self.id), ('status', 'in', ['failed', 'error'])],
         }
 

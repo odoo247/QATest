@@ -107,7 +107,7 @@ class QATestGenerateWizard(models.TransientModel):
             'name': 'Generated Tests',
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.case',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('spec_id', 'in', self.spec_ids.ids)],
         }
     

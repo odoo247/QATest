@@ -149,7 +149,7 @@ class QATestCase(models.Model):
             'name': 'Test Results',
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.result',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('test_case_id', '=', self.id)],
         }
 

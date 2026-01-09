@@ -219,7 +219,7 @@ class QATestSpec(models.Model):
             'name': 'Test Cases',
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.case',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('spec_id', '=', self.id)],
             'context': {'default_spec_id': self.id},
         }

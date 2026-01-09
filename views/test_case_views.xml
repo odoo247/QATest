@@ -106,7 +106,7 @@
                         </page>
                         <page string="Test Steps" name="steps">
                             <field name="step_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="action"/>
@@ -114,7 +114,7 @@
                                     <field name="locator_value"/>
                                     <field name="input_value"/>
                                     <field name="robot_line" readonly="1"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>
@@ -133,7 +133,7 @@
         <field name="name">qa.test.case.tree</field>
         <field name="model">qa.test.case</field>
         <field name="arch" type="xml">
-            <tree string="Test Cases" default_order="sequence">
+            <list string="Test Cases" default_order="sequence">
                 <field name="sequence" widget="handle"/>
                 <field name="test_id"/>
                 <field name="name"/>
@@ -148,7 +148,7 @@
                 <field name="pass_rate" widget="progressbar"/>
                 <field name="last_run_date"/>
                 <field name="total_runs"/>
-            </tree>
+            </list>
         </field>
     </record>
     
@@ -240,7 +240,7 @@
     <record id="action_qa_test_case" model="ir.actions.act_window">
         <field name="name">Test Cases</field>
         <field name="res_model">qa.test.case</field>
-        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_mode">list,kanban,form</field>
         <field name="search_view_id" ref="view_qa_test_case_search"/>
         <field name="context">{'search_default_ready': 1}</field>
         <field name="help" type="html">

@@ -101,7 +101,7 @@ Example:
                         </page>
                         <page string="Generated Tests" name="tests" invisible="test_case_count == 0">
                             <field name="test_case_ids" readonly="1">
-                                <tree>
+                                <list>
                                     <field name="test_id"/>
                                     <field name="name"/>
                                     <field name="category"/>
@@ -110,7 +110,7 @@ Example:
                                            decoration-danger="state == 'failed'"
                                            decoration-warning="state == 'error'"/>
                                     <field name="last_run_date"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Generation Log" name="log" invisible="not generation_log">
@@ -135,7 +135,7 @@ Example:
         <field name="name">qa.test.spec.tree</field>
         <field name="model">qa.test.spec</field>
         <field name="arch" type="xml">
-            <tree string="Test Specifications" default_order="sequence">
+            <list string="Test Specifications" default_order="sequence">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="module_id"/>
@@ -149,7 +149,7 @@ Example:
                        decoration-danger="state == 'error'"/>
                 <field name="tag_ids" widget="many2many_tags" 
                        options="{'color_field': 'color'}"/>
-            </tree>
+            </list>
         </field>
     </record>
     
@@ -226,7 +226,7 @@ Example:
     <record id="action_qa_test_spec" model="ir.actions.act_window">
         <field name="name">Test Specifications</field>
         <field name="res_model">qa.test.spec</field>
-        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_mode">list,kanban,form</field>
         <field name="search_view_id" ref="view_qa_test_spec_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
@@ -244,17 +244,17 @@ Example:
         <field name="name">qa.test.tag.tree</field>
         <field name="model">qa.test.tag</field>
         <field name="arch" type="xml">
-            <tree string="Tags" editable="bottom">
+            <list string="Tags" editable="bottom">
                 <field name="name"/>
                 <field name="color" widget="color_picker"/>
                 <field name="description"/>
-            </tree>
+            </list>
         </field>
     </record>
     
     <record id="action_qa_test_tag" model="ir.actions.act_window">
         <field name="name">Test Tags</field>
         <field name="res_model">qa.test.tag</field>
-        <field name="view_mode">tree</field>
+        <field name="view_mode">list</field>
     </record>
 </odoo>
