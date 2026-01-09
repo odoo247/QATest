@@ -55,6 +55,7 @@ Technical Requirements
         'data/cron_data.xml',
         'data/mail_template_data.xml',
         # Views (actions must be loaded BEFORE menus)
+        'views/customer_views.xml',
         'views/ai_config_views.xml',
         'views/git_repository_views.xml',
         'views/test_spec_views.xml',

@@ -17,6 +17,14 @@ class QATestRun(models.Model):
     name = fields.Char(string='Run Name', required=True, default=lambda self: self._default_name())
     active = fields.Boolean(default=True)
     
+    # Customer & Server
+    customer_id = fields.Many2one('qa.customer', string='Customer',
+                                   ondelete='cascade',
+                                   help='Customer this run belongs to')
+    server_id = fields.Many2one('qa.customer.server', string='Target Server',
+                                 ondelete='set null',
+                                 help='Server where tests were executed')
+    
     # Run configuration
     suite_id = fields.Many2one('qa.test.suite', string='Test Suite')
     test_case_ids = fields.Many2many('qa.test.case', string='Test Cases')

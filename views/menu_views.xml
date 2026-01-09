@@ -6,11 +6,25 @@
               web_icon="qa_test_generator,static/description/icon.png"
               sequence="100"/>
     
+    <!-- Customers Menu (Top Level) -->
+    <menuitem id="menu_qa_customers"
+              name="Customers"
+              parent="menu_qa_test_root"
+              action="action_qa_customer"
+              sequence="5"/>
+    
+    <!-- Dashboard Menu -->
+    <menuitem id="menu_qa_dashboard"
+              name="Dashboard"
+              parent="menu_qa_test_root"
+              action="action_qa_dashboard_window"
+              sequence="10"/>
+    
     <!-- Test Management Menu -->
     <menuitem id="menu_qa_test_management"
               name="Test Management"
               parent="menu_qa_test_root"
-              sequence="10"/>
+              sequence="20"/>
     
     <menuitem id="menu_qa_test_spec"
               name="Test Specifications"
@@ -34,7 +48,7 @@
     <menuitem id="menu_qa_test_execution"
               name="Execution"
               parent="menu_qa_test_root"
-              sequence="20"/>
+              sequence="30"/>
     
     <menuitem id="menu_qa_test_run"
               name="Test Runs"
@@ -47,13 +61,6 @@
               parent="menu_qa_test_execution"
               action="action_qa_test_result"
               sequence="20"/>
-    
-    <!-- Dashboard Menu -->
-    <menuitem id="menu_qa_dashboard"
-              name="Dashboard"
-              parent="menu_qa_test_root"
-              action="action_qa_dashboard_window"
-              sequence="5"/>
     
     <!-- Configuration Menu -->
     <menuitem id="menu_qa_test_config"
@@ -90,4 +97,10 @@
               parent="menu_qa_test_config"
               action="action_qa_module_source"
               sequence="50"/>
+    
+    <menuitem id="menu_qa_all_servers"
+              name="All Servers"
+              parent="menu_qa_test_config"
+              action="action_qa_customer_server"
+              sequence="60"/>
 </odoo>

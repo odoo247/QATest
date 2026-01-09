@@ -11,11 +11,16 @@ class QATestSpec(models.Model):
     _name = 'qa.test.spec'
     _description = 'Test Specification'
     _inherit = ['mail.thread', 'mail.activity.mixin']
-    _order = 'sequence, id'
+    _order = 'customer_id, sequence, id'
 
     name = fields.Char(string='Specification Name', required=True, tracking=True)
     sequence = fields.Integer(string='Sequence', default=10)
     active = fields.Boolean(default=True)
+    
+    # Customer
+    customer_id = fields.Many2one('qa.customer', string='Customer',
+                                   ondelete='cascade',
+                                   help='Customer this specification belongs to')
     
     # Classification
     module_id = fields.Many2one('ir.module.module', string='Odoo Module',

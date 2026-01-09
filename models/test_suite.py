@@ -11,11 +11,16 @@ class QATestSuite(models.Model):
     _name = 'qa.test.suite'
     _description = 'Test Suite'
     _inherit = ['mail.thread', 'mail.activity.mixin']
-    _order = 'sequence, name'
+    _order = 'customer_id, sequence, name'
 
     name = fields.Char(string='Suite Name', required=True, tracking=True)
     sequence = fields.Integer(string='Sequence', default=10)
     active = fields.Boolean(default=True)
+    
+    # Customer
+    customer_id = fields.Many2one('qa.customer', string='Customer',
+                                   ondelete='cascade',
+                                   help='Customer this suite belongs to')
     
     description = fields.Text(string='Description')
     

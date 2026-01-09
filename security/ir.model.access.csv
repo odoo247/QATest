@@ -1,4 +1,10 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_qa_customer_admin,qa.customer admin,model_qa_customer,group_qa_admin,1,1,1,1
+access_qa_customer_manager,qa.customer manager,model_qa_customer,group_qa_manager,1,1,1,0
+access_qa_customer_user,qa.customer user,model_qa_customer,group_qa_user,1,0,0,0
+access_qa_customer_server_admin,qa.customer.server admin,model_qa_customer_server,group_qa_admin,1,1,1,1
+access_qa_customer_server_manager,qa.customer.server manager,model_qa_customer_server,group_qa_manager,1,1,1,0
+access_qa_customer_server_user,qa.customer.server user,model_qa_customer_server,group_qa_user,1,0,0,0
 access_qa_ai_config_admin,qa.test.ai.config admin,model_qa_test_ai_config,group_qa_admin,1,1,1,1
 access_qa_ai_config_manager,qa.test.ai.config manager,model_qa_test_ai_config,group_qa_manager,1,1,0,0
 access_qa_test_spec_admin,qa.test.spec admin,model_qa_test_spec,group_qa_admin,1,1,1,1

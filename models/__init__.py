@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from . import ai_config
+from . import customer
 from . import git_repository
 from . import test_spec
 from . import test_suite

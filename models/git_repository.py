@@ -17,10 +17,15 @@ class QAGitRepository(models.Model):
     """
     _name = 'qa.git.repository'
     _description = 'Git Repository Configuration'
-    _order = 'name'
+    _order = 'customer_id, name'
 
     name = fields.Char(string='Name', required=True)
     active = fields.Boolean(default=True)
+    
+    # Customer
+    customer_id = fields.Many2one('qa.customer', string='Customer',
+                                   ondelete='cascade',
+                                   help='Customer this repository belongs to')
     
     # Repository Configuration
     provider = fields.Selection([

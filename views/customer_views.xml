@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Customer Form View -->
+    <record id="view_qa_customer_form" model="ir.ui.view">
+        <field name="name">qa.customer.form</field>
+        <field name="model">qa.customer</field>
+        <field name="arch" type="xml">
+            <form string="Customer">
+                <header>
+                    <button name="action_run_all_tests" type="object"
+                            string="▶ Run All Tests" class="btn-primary"
+                            invisible="suite_count == 0"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object"
+                                name="action_view_servers" icon="fa-server">
+                            <field name="server_count" widget="statinfo" string="Servers"/>
+                        </button>
+                        <button class="oe_stat_button" type="object"
+                                name="action_view_specs" icon="fa-file-text-o">
+                            <field name="spec_count" widget="statinfo" string="Specs"/>
+                        </button>
+                        <button class="oe_stat_button" type="object"
+                                name="action_view_suites" icon="fa-folder-o">
+                            <field name="suite_count" widget="statinfo" string="Suites"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Customer Name"/>
+                        </h1>
+                        <h3>
+                            <field name="code" placeholder="CODE"/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group string="Contact">
+                            <field name="contact_name"/>
+                            <field name="contact_email"/>
+                            <field name="contact_phone"/>
+                        </group>
+                        <group string="Technical">
+                            <field name="odoo_version"/>
+                            <field name="pass_rate" widget="progressbar"/>
+                            <field name="last_run_date"/>
+                            <field name="last_run_status" widget="badge"
+                                   decoration-success="last_run_status == 'passed'"
+                                   decoration-danger="last_run_status == 'failed'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Servers" name="servers">
+                            <field name="server_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="environment" widget="badge"/>
+                                    <field name="url"/>
+                                    <field name="database"/>
+                                    <field name="connection_status" widget="badge"
+                                           decoration-success="connection_status == 'connected'"
+                                           decoration-danger="connection_status == 'failed'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Git Repositories" name="repositories">
+                            <field name="repository_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="provider"/>
+                                    <field name="repo_url"/>
+                                    <field name="branch"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Test Suites" name="suites">
+                            <field name="suite_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="spec_count"/>
+                                    <field name="test_case_count"/>
+                                    <field name="pass_rate" widget="progressbar"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="notes" placeholder="Internal notes about this customer..."/>
+                        </page>
+                    </notebook>
+                    <field name="active" invisible="1"/>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Customer List View -->
+    <record id="view_qa_customer_list" model="ir.ui.view">
+        <field name="name">qa.customer.list</field>
+        <field name="model">qa.customer</field>
+        <field name="arch" type="xml">
+            <list string="Customers" decoration-muted="not active">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="odoo_version" widget="badge"/>
+                <field name="server_count"/>
+                <field name="spec_count"/>
+                <field name="test_count"/>
+                <field name="pass_rate" widget="progressbar"/>
+                <field name="last_run_status" widget="badge"
+                       decoration-success="last_run_status == 'passed'"
+                       decoration-danger="last_run_status == 'failed'"/>
+                <field name="last_run_date"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Customer Kanban View -->
+    <record id="view_qa_customer_kanban" model="ir.ui.view">
+        <field name="name">qa.customer.kanban</field>
+        <field name="model">qa.customer</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="odoo_version"/>
+                <field name="pass_rate"/>
+                <field name="last_run_status"/>
+                <templates>
+                    <t t-name="kanban-card">
+                        <div class="oe_kanban_content">
+                            <div class="o_kanban_record_top mb-2">
+                                <strong class="o_kanban_record_title">
+                                    <field name="name"/>
+                                </strong>
+                                <span class="badge text-bg-secondary ms-2">
+                                    <field name="code"/>
+                                </span>
+                            </div>
+                            <div class="o_kanban_record_body">
+                                <div class="d-flex justify-content-between">
+                                    <span>Odoo <field name="odoo_version"/></span>
+                                    <span t-if="record.last_run_status.raw_value">
+                                        <t t-if="record.last_run_status.raw_value == 'passed'">
+                                            <span class="badge text-bg-success">Passed</span>
+                                        </t>
+                                        <t t-elif="record.last_run_status.raw_value == 'failed'">
+                                            <span class="badge text-bg-danger">Failed</span>
+                                        </t>
+                                    </span>
+                                </div>
+                                <div class="mt-2">
+                                    <span class="text-muted">Pass Rate:</span>
+                                    <field name="pass_rate" widget="progressbar"/>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Customer Search View -->
+    <record id="view_qa_customer_search" model="ir.ui.view">
+        <field name="name">qa.customer.search</field>
+        <field name="model">qa.customer</field>
+        <field name="arch" type="xml">
+            <search string="Search Customers">
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="active" string="Active" domain="[('active', '=', True)]"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter name="odoo18" string="Odoo 18" domain="[('odoo_version', '=', '18.0')]"/>
+                <filter name="odoo17" string="Odoo 17" domain="[('odoo_version', '=', '17.0')]"/>
+                <filter name="odoo16" string="Odoo 16" domain="[('odoo_version', '=', '16.0')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_version" string="Odoo Version" context="{'group_by': 'odoo_version'}"/>
+                    <filter name="group_status" string="Last Status" context="{'group_by': 'last_run_status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Customer Action -->
+    <record id="action_qa_customer" model="ir.actions.act_window">
+        <field name="name">Customers</field>
+        <field name="res_model">qa.customer</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first customer!
+            </p>
+            <p>
+                Manage QA testing for multiple customers. Each customer can have
+                their own servers, repositories, and test configurations.
+            </p>
+        </field>
+    </record>
+
+    <!-- Customer Server Form View -->
+    <record id="view_qa_customer_server_form" model="ir.ui.view">
+        <field name="name">qa.customer.server.form</field>
+        <field name="model">qa.customer.server</field>
+        <field name="arch" type="xml">
+            <form string="Customer Server">
+                <header>
+                    <button name="test_connection" type="object"
+                            string="Test Connection" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Basic Info">
+                            <field name="customer_id"/>
+                            <field name="environment" widget="badge"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Connection">
+                            <field name="url" placeholder="https://customer.odoo.com"/>
+                            <field name="database"/>
+                            <field name="connection_status" widget="badge"
+                                   decoration-success="connection_status == 'connected'"
+                                   decoration-danger="connection_status == 'failed'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Authentication" name="auth">
+                            <group>
+                                <field name="auth_type"/>
+                                <field name="api_key" password="True"
+                                       invisible="auth_type != 'api_key'"/>
+                                <field name="username"
+                                       invisible="auth_type != 'password'"/>
+                                <field name="password" password="True"
+                                       invisible="auth_type != 'password'"/>
+                            </group>
+                        </page>
+                        <page string="SSH Configuration" name="ssh">
+                            <group>
+                                <field name="ssh_enabled"/>
+                                <field name="ssh_host" invisible="not ssh_enabled"/>
+                                <field name="ssh_port" invisible="not ssh_enabled"/>
+                                <field name="ssh_user" invisible="not ssh_enabled"/>
+                                <field name="ssh_key" invisible="not ssh_enabled"
+                                       placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"/>
+                                <field name="robot_path" invisible="not ssh_enabled"/>
+                            </group>
+                        </page>
+                        <page string="Status" name="status">
+                            <group>
+                                <field name="last_test_date"/>
+                                <field name="last_test_status" widget="badge"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Customer Server List View -->
+    <record id="view_qa_customer_server_list" model="ir.ui.view">
+        <field name="name">qa.customer.server.list</field>
+        <field name="model">qa.customer.server</field>
+        <field name="arch" type="xml">
+            <list string="Customer Servers">
+                <field name="sequence" widget="handle"/>
+                <field name="customer_id"/>
+                <field name="name"/>
+                <field name="environment" widget="badge"/>
+                <field name="url"/>
+                <field name="database"/>
+                <field name="connection_status" widget="badge"
+                       decoration-success="connection_status == 'connected'"
+                       decoration-danger="connection_status == 'failed'"/>
+                <field name="last_test_status" widget="badge"
+                       decoration-success="last_test_status == 'passed'"
+                       decoration-danger="last_test_status == 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Customer Server Action -->
+    <record id="action_qa_customer_server" model="ir.actions.act_window">
+        <field name="name">All Servers</field>
+        <field name="res_model">qa.customer.server</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
