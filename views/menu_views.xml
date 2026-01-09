@@ -52,7 +52,7 @@
     <menuitem id="menu_qa_dashboard"
               name="Dashboard"
               parent="menu_qa_test_root"
-              action="action_qa_dashboard"
+              action="action_qa_dashboard_window"
               sequence="5"/>
     
     <!-- Configuration Menu -->

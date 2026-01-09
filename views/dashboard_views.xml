@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Dashboard Action - Simple redirect to Test Suites with stats -->
-    <!-- Custom OWL dashboard can be added later -->
-    <record id="action_qa_dashboard" model="ir.actions.act_window">
+    <!-- Using new ID to avoid conflict with old ir.actions.client -->
+    <record id="action_qa_dashboard_window" model="ir.actions.act_window">
         <field name="name">QA Dashboard</field>
         <field name="res_model">qa.test.suite</field>
         <field name="view_mode">list,form</field>
