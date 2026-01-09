@@ -78,6 +78,8 @@ class QATestSpec(models.Model):
     
     # Tags
     tag_ids = fields.Many2many('qa.test.tag', string='Tags')
+    color = fields.Integer(string='Color Index', default=0,
+                           help='Color index for kanban view')
     
     # Audit
     created_by_id = fields.Many2one('res.users', string='Created By',
