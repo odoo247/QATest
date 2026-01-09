@@ -30,7 +30,6 @@ QA Test Generator is a comprehensive Odoo module that enables QA teams to genera
 
 ## Quick Start
 
-
 ### 1. Create a Test Specification
 
 ```

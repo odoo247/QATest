@@ -223,7 +223,6 @@ class QATestSuite(models.Model):
                 'code': f'model.browse({self.id}).action_scheduled_run()',
                 'interval_type': interval_type,
                 'interval_number': interval_number,
-                'numbercall': -1,
                 'active': True,
             })
             self.cron_id = cron.id
