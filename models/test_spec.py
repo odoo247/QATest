@@ -20,6 +20,7 @@ class QATestSpec(models.Model):
     # Classification
     module_id = fields.Many2one('ir.module.module', string='Odoo Module',
                                 domain=[('state', '=', 'installed')],
+                                ondelete='set null',
                                 help='The Odoo module this spec relates to')
     module_name = fields.Char(string='Module Technical Name', 
                               compute='_compute_module_name', store=True)

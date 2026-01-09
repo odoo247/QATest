@@ -70,7 +70,8 @@ class QATestSuite(models.Model):
     
     # Schedule
     scheduled = fields.Boolean(string='Scheduled', default=False)
-    cron_id = fields.Many2one('ir.cron', string='Scheduled Job', readonly=True)
+    cron_id = fields.Many2one('ir.cron', string='Scheduled Job', readonly=True,
+                               ondelete='set null')
     schedule_interval = fields.Selection([
         ('hourly', 'Hourly'),
         ('daily', 'Daily'),

@@ -1,13 +1,16 @@
-/* QA Test Generator Dashboard Styles */
+/* QA Test Generator Dashboard Styles - Odoo 18 / Bootstrap 5 */
 
 .qa-dashboard {
     padding: 20px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
 }
 
 .qa-dashboard .card {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s;
+    border: none;
 }
 
 .qa-dashboard .card:hover {
@@ -35,21 +38,26 @@
     color: #666;
 }
 
-.qa-dashboard .badge-passed {
-    background-color: #28a745;
+/* Bootstrap 5 badge classes */
+.qa-dashboard .text-bg-success {
+    background-color: #198754 !important;
 }
 
-.qa-dashboard .badge-failed {
-    background-color: #dc3545;
+.qa-dashboard .text-bg-danger {
+    background-color: #dc3545 !important;
 }
 
-.qa-dashboard .badge-running {
-    background-color: #ffc107;
-    color: #333;
+.qa-dashboard .text-bg-warning {
+    background-color: #ffc107 !important;
+    color: #333 !important;
 }
 
-.qa-dashboard .badge-pending {
-    background-color: #6c757d;
+.qa-dashboard .text-bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.qa-dashboard .text-bg-secondary {
+    background-color: #6c757d !important;
 }
 
 /* Progress bar styles */
@@ -68,90 +76,35 @@
     padding: 10px 20px;
 }
 
-/* Status indicators */
-.status-indicator {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-right: 5px;
-}
-
-.status-indicator.passed {
-    background-color: #28a745;
-}
-
-.status-indicator.failed {
-    background-color: #dc3545;
-}
-
-.status-indicator.running {
-    background-color: #ffc107;
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-/* Test case list styles */
-.test-case-item {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    transition: background-color 0.2s;
-}
-
-.test-case-item:hover {
-    background-color: #f8f9fa;
-}
-
-.test-case-item:last-child {
-    border-bottom: none;
-}
-
-/* Code preview */
-.code-preview {
-    background-color: #f5f5f5;
-    padding: 15px;
-    border-radius: 5px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    overflow-x: auto;
-}
-
-/* Screenshot thumbnail */
-.screenshot-thumbnail {
-    max-width: 200px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+/* Cursor pointer for clickable rows */
+.cursor-pointer {
     cursor: pointer;
-    transition: transform 0.2s;
 }
 
-.screenshot-thumbnail:hover {
-    transform: scale(1.05);
+.cursor-pointer:hover {
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Loading spinner */
 .qa-loading {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px;
+    padding: 60px;
 }
 
-.qa-loading .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+/* Card header styling */
+.qa-dashboard .card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.qa-dashboard .card-header h5 {
+    font-weight: 600;
+}
+
+/* Table improvements */
+.qa-dashboard .table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
 }

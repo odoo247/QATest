@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="qa_test_generator.Dashboard">
+        <div class="qa-dashboard container-fluid p-4">
+            <!-- Loading State -->
+            <div t-if="state.loading" class="qa-loading text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading dashboard...</p>
+            </div>
+            
+            <div t-else="">
+                <!-- Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h2 class="mb-0">
+                            <i class="fa fa-tachometer-alt me-2"/>QA Testing Dashboard
+                        </h2>
+                    </div>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mb-4 g-3">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-uppercase opacity-75">Total Specs</h6>
+                                <h2 class="card-text mb-0" t-esc="state.totalSpecs"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-uppercase opacity-75">Test Cases</h6>
+                                <h2 class="card-text mb-0" t-esc="state.totalTests"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-uppercase opacity-75">Pass Rate</h6>
+                                <h2 class="card-text mb-0"><t t-esc="state.passRate"/>%</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-dark h-100">
+                            <div class="card-body">
+                                <h6 class="card-title text-uppercase opacity-75">Pending</h6>
+                                <h2 class="card-text mb-0" t-esc="state.pendingTests"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-primary me-2" t-on-click="onNewSpec">
+                                    <i class="fa fa-plus me-1"/> New Specification
+                                </button>
+                                <button class="btn btn-success me-2" t-on-click="onRunAll">
+                                    <i class="fa fa-play me-1"/> Run Tests
+                                </button>
+                                <button class="btn btn-info me-2" t-on-click="onViewResults">
+                                    <i class="fa fa-list me-1"/> View Results
+                                </button>
+                                <button class="btn btn-secondary" t-on-click="onConfig">
+                                    <i class="fa fa-cog me-1"/> Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tables Row -->
+                <div class="row g-3">
+                    <!-- Recent Runs -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Recent Test Runs</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Run</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Pass Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.recentRuns" t-as="run" t-key="run.id">
+                                            <tr class="cursor-pointer" t-on-click="() => this.onViewRun(run.id)">
+                                                <td t-esc="run.name"/>
+                                                <td t-esc="formatDate(run.date)"/>
+                                                <td>
+                                                    <span t-att-class="getStatusBadgeClass(run.state)" t-esc="run.state"/>
+                                                </td>
+                                                <td><t t-esc="run.pass_rate"/>%</td>
+                                            </tr>
+                                        </t>
+                                        <tr t-if="!state.recentRuns.length">
+                                            <td colspan="4" class="text-center text-muted py-3">
+                                                No test runs yet
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Failed Tests -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Failed Tests</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Test</th>
+                                            <th>Last Run</th>
+                                            <th>Error</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.failedTests" t-as="test" t-key="test.id">
+                                            <tr class="cursor-pointer" t-on-click="() => this.onViewTest(test.id)">
+                                                <td t-esc="test.name"/>
+                                                <td t-esc="formatDate(test.last_run)"/>
+                                                <td class="text-danger text-truncate" style="max-width: 200px;" t-esc="test.error"/>
+                                            </tr>
+                                        </t>
+                                        <tr t-if="!state.failedTests.length">
+                                            <td colspan="3" class="text-center text-success py-3">
+                                                <i class="fa fa-check-circle me-1"/> All tests passing!
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

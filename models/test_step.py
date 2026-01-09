@@ -113,7 +113,7 @@ class QATestStep(models.Model):
         elif self.locator_type == 'css':
             return f"css={self.locator_value}"
         elif self.locator_type == 'text':
-            return f"//\*[contains(text(),'{self.locator_value}')]"
+            return f"//*[contains(text(),'{self.locator_value}')]"
         elif self.locator_type == 'class':
             return f"class={self.locator_value}"
         return self.locator_value

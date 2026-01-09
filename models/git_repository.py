@@ -338,7 +338,8 @@ class QAModuleSource(models.Model):
     _rec_name = 'module_id'
 
     module_id = fields.Many2one('ir.module.module', string='Module', required=True,
-                                 domain=[('state', '=', 'installed')])
+                                 domain=[('state', '=', 'installed')],
+                                 ondelete='cascade')
     module_name = fields.Char(related='module_id.name', store=True)
     
     repository_id = fields.Many2one('qa.git.repository', string='Repository', required=True)

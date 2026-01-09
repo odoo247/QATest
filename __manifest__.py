@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'QA Test Generator',
-    'version': '17.0.1.0.0',
+    'version': '18.0.1.0.0',
     'category': 'Productivity/Testing',
     'summary': 'AI-Powered Test Generation for Odoo',
     'description': """
@@ -15,7 +15,8 @@ Features
 --------
 * Write functional specifications in plain text
 * AI automatically analyzes Odoo modules (models, views, fields)
-* Generates Robot Framework test cases
+* Fetches source code from GitHub/GitLab/Bitbucket for deep analysis
+* Generates Robot Framework test cases with negative scenarios
 * Integrates with Jenkins for CI/CD
 * Dashboard for test results and analytics
 * Screenshot capture on failures
@@ -26,13 +27,14 @@ Configuration
 1. Install the module
 2. Go to QA Testing > Configuration > AI Settings
 3. Enter your Anthropic API key
-4. Configure Jenkins connection (optional)
-5. Start creating test specifications!
+4. Configure Git repository for source code access
+5. Configure Jenkins connection (optional)
+6. Start creating test specifications!
 
 Technical Requirements
 ----------------------
 * Robot Framework
-* Playwright or Selenium
+* Selenium or Playwright
 * Anthropic API key (Claude)
 * Jenkins (optional, for CI/CD)
     """,
@@ -69,6 +71,7 @@ Technical Requirements
         'web.assets_backend': [
             'qa_test_generator/static/src/css/dashboard.css',
             'qa_test_generator/static/src/js/dashboard.js',
+            'qa_test_generator/static/src/xml/dashboard.xml',
         ],
     },
     'images': ['static/description/icon.png'],

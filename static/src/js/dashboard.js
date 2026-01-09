@@ -4,8 +4,9 @@ import { registry } from "@web/core/registry";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
-class QADashboard extends Component {
+export class QADashboard extends Component {
     static template = "qa_test_generator.Dashboard";
+    static props = {};
     
     setup() {
         this.orm = useService("orm");
@@ -73,7 +74,7 @@ class QADashboard extends Component {
         this.action.doAction({
             type: "ir.actions.act_window",
             res_model: "qa.test.result",
-            view_mode: "tree,form",
+            view_mode: "list,form",
             views: [[false, "list"], [false, "form"]],
             target: "current",
         });
@@ -83,7 +84,7 @@ class QADashboard extends Component {
         this.action.doAction({
             type: "ir.actions.act_window",
             res_model: "qa.test.ai.config",
-            view_mode: "tree,form",
+            view_mode: "list,form",
             views: [[false, "list"], [false, "form"]],
             target: "current",
         });
@@ -113,13 +114,13 @@ class QADashboard extends Component {
     
     getStatusBadgeClass(status) {
         const classes = {
-            passed: "badge bg-success",
-            failed: "badge bg-danger",
-            error: "badge bg-warning",
-            running: "badge bg-info",
-            pending: "badge bg-secondary",
+            passed: "badge text-bg-success",
+            failed: "badge text-bg-danger",
+            error: "badge text-bg-warning",
+            running: "badge text-bg-info",
+            pending: "badge text-bg-secondary",
         };
-        return classes[status] || "badge bg-secondary";
+        return classes[status] || "badge text-bg-secondary";
     }
     
     formatDate(dateStr) {
@@ -129,8 +130,4 @@ class QADashboard extends Component {
     }
 }
 
-QADashboard.template = "qa_test_generator.Dashboard";
-
 registry.category("actions").add("qa_test_dashboard", QADashboard);
-
-export default QADashboard;

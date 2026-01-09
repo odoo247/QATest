@@ -70,7 +70,8 @@ class QATestRun(models.Model):
     log = fields.Text(string='Execution Log')
     error_message = fields.Text(string='Error Message')
     report_html = fields.Html(string='HTML Report')
-    report_attachment_id = fields.Many2one('ir.attachment', string='Report File')
+    report_attachment_id = fields.Many2one('ir.attachment', string='Report File',
+                                           ondelete='set null')
     
     # Jenkins integration
     jenkins_build_number = fields.Integer(string='Jenkins Build #')
