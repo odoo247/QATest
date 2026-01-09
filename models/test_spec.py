@@ -28,7 +28,7 @@ class QATestSpec(models.Model):
                                 ondelete='set null',
                                 help='The Odoo module this spec relates to')
     module_name = fields.Char(string='Module Technical Name', 
-                              compute='_compute_module_name', store=True)
+                              compute='_compute_module_name')
     category = fields.Selection([
         ('functional', 'Functional Test'),
         ('integration', 'Integration Test'),

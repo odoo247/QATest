@@ -12,7 +12,7 @@ class QATestResult(models.Model):
     _description = 'Test Result'
     _order = 'execution_date desc'
 
-    name = fields.Char(string='Result Name', compute='_compute_name', store=True)
+    name = fields.Char(string='Result Name', compute='_compute_name')
     
     # Relations
     test_case_id = fields.Many2one('qa.test.case', string='Test Case', 
