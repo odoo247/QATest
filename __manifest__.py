@@ -68,13 +68,14 @@ Technical Requirements
         'wizards/views/generate_tests_wizard_views.xml',
         'wizards/views/run_tests_wizard_views.xml',
     ],
-    'assets': {
-        'web.assets_backend': [
-            'qa_test_generator/static/src/css/dashboard.css',
-            'qa_test_generator/static/src/js/dashboard.js',
-            'qa_test_generator/static/src/xml/dashboard.xml',
-        ],
-    },
+    # Dashboard assets commented out - can be added once core is working
+    # 'assets': {
+    #     'web.assets_backend': [
+    #         'qa_test_generator/static/src/css/dashboard.css',
+    #         'qa_test_generator/static/src/js/dashboard.js',
+    #         'qa_test_generator/static/src/xml/dashboard.xml',
+    #     ],
+    # },
     'images': ['static/description/icon.png'],
     'installable': True,
     'application': True,
