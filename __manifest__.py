@@ -54,8 +54,7 @@ Technical Requirements
         'data/config_data.xml',
         'data/cron_data.xml',
         'data/mail_template_data.xml',
-        # Views
-        'views/menu_views.xml',
+        # Views (actions must be loaded BEFORE menus)
         'views/ai_config_views.xml',
         'views/git_repository_views.xml',
         'views/test_spec_views.xml',
@@ -63,6 +62,8 @@ Technical Requirements
         'views/test_suite_views.xml',
         'views/test_result_views.xml',
         'views/dashboard_views.xml',
+        # Menus (loaded AFTER actions)
+        'views/menu_views.xml',
         # Wizards
         'wizards/views/generate_tests_wizard_views.xml',
         'wizards/views/run_tests_wizard_views.xml',
