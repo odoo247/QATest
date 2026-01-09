@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Health Check Form View -->
+    <record id="view_qa_health_check_form" model="ir.ui.view">
+        <field name="name">qa.health.check.form</field>
+        <field name="model">qa.health.check</field>
+        <field name="arch" type="xml">
+            <form string="Health Check">
+                <header>
+                    <button name="action_run_check" string="Run Check" type="object" class="btn-primary"/>
+                    <button name="action_reset_baseline" string="Reset Baseline" type="object" invisible="check_type != 'studio_change'"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-history" type="object" name="action_view_history" invisible="1">
+                            <field name="consecutive_failures" string="Failures" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="OK" bg_color="text-bg-success" invisible="status != 'ok'"/>
+                    <widget name="web_ribbon" title="Warning" bg_color="text-bg-warning" invisible="status != 'warning'"/>
+                    <widget name="web_ribbon" title="Critical" bg_color="text-bg-danger" invisible="status != 'critical'"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Check name..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="customer_id"/>
+                            <field name="server_id" domain="[('customer_id', '=', customer_id)]"/>
+                            <field name="check_type"/>
+                            <field name="check_interval"/>
+                        </group>
+                        <group>
+                            <field name="status" widget="badge" decoration-success="status == 'ok'" decoration-warning="status == 'warning'" decoration-danger="status == 'critical'"/>
+                            <field name="last_check"/>
+                            <field name="next_check"/>
+                            <field name="last_value"/>
+                        </group>
+                    </group>
+                    
+                    <!-- Integration Check Fields -->
+                    <group string="Integration Settings" invisible="check_type != 'integration'">
+                        <group>
+                            <field name="endpoint_url" placeholder="https://api.example.com/health"/>
+                            <field name="http_method"/>
+                            <field name="expected_status"/>
+                        </group>
+                        <group>
+                            <field name="timeout"/>
+                            <field name="auth_header" password="True"/>
+                        </group>
+                    </group>
+                    
+                    <!-- Data Integrity Fields -->
+                    <group string="Data Integrity Settings" invisible="check_type != 'data_integrity'">
+                        <field name="model_to_watch" placeholder="sale.order"/>
+                        <field name="check_query" placeholder="[('state', '=', 'draft'), ('date_order', '&lt;', '2024-01-01')]"/>
+                        <field name="expected_result"/>
+                        <field name="expected_value" invisible="expected_result != 'specific'"/>
+                    </group>
+                    
+                    <!-- Studio Change Detection Fields -->
+                    <group string="Studio Change Detection" invisible="check_type != 'studio_change'">
+                        <field name="model_to_watch" placeholder="sale.order"/>
+                        <field name="baseline_date"/>
+                        <field name="baseline_fields" readonly="1"/>
+                    </group>
+                    
+                    <!-- Cron Job Fields -->
+                    <group string="Cron Job Settings" invisible="check_type != 'cron_job'">
+                        <field name="cron_id"/>
+                        <field name="max_age_hours"/>
+                    </group>
+                    
+                    <!-- Custom Check Fields -->
+                    <group string="Custom Check" invisible="check_type not in ('custom', 'performance')">
+                        <field name="check_query" placeholder="# Python code here..." widget="ace" options="{'mode': 'python'}"/>
+                    </group>
+                    
+                    <!-- Alert Settings -->
+                    <group string="Alerting">
+                        <group>
+                            <field name="alert_on_failure"/>
+                            <field name="alert_after_failures"/>
+                        </group>
+                        <group>
+                            <field name="alert_email" placeholder="alerts@company.com"/>
+                        </group>
+                    </group>
+                    
+                    <!-- Last Message -->
+                    <group string="Last Result">
+                        <field name="last_message" readonly="1" nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Health Check List View -->
+    <record id="view_qa_health_check_list" model="ir.ui.view">
+        <field name="name">qa.health.check.list</field>
+        <field name="model">qa.health.check</field>
+        <field name="arch" type="xml">
+            <list string="Health Checks" decoration-success="status == 'ok'" decoration-warning="status == 'warning'" decoration-danger="status == 'critical'">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="check_type"/>
+                <field name="status" widget="badge" decoration-success="status == 'ok'" decoration-warning="status == 'warning'" decoration-danger="status == 'critical'"/>
+                <field name="last_value"/>
+                <field name="last_check"/>
+                <field name="consecutive_failures"/>
+                <button name="action_run_check" string="Run" type="object" icon="fa-play"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Health Check Search View -->
+    <record id="view_qa_health_check_search" model="ir.ui.view">
+        <field name="name">qa.health.check.search</field>
+        <field name="model">qa.health.check</field>
+        <field name="arch" type="xml">
+            <search string="Health Checks">
+                <field name="name"/>
+                <field name="customer_id"/>
+                <separator/>
+                <filter string="OK" name="ok" domain="[('status', '=', 'ok')]"/>
+                <filter string="Warning" name="warning" domain="[('status', '=', 'warning')]"/>
+                <filter string="Critical" name="critical" domain="[('status', '=', 'critical')]"/>
+                <separator/>
+                <filter string="Integrations" name="integration" domain="[('check_type', '=', 'integration')]"/>
+                <filter string="Data Integrity" name="data" domain="[('check_type', '=', 'data_integrity')]"/>
+                <filter string="Studio Changes" name="studio" domain="[('check_type', '=', 'studio_change')]"/>
+                <filter string="Cron Jobs" name="cron" domain="[('check_type', '=', 'cron_job')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Customer" name="group_customer" context="{'group_by': 'customer_id'}"/>
+                    <filter string="Type" name="group_type" context="{'group_by': 'check_type'}"/>
+                    <filter string="Status" name="group_status" context="{'group_by': 'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Health Check Action -->
+    <record id="action_qa_health_check" model="ir.actions.act_window">
+        <field name="name">Health Checks</field>
+        <field name="res_model">qa.health.check</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_qa_health_check_search"/>
+        <field name="context">{'search_default_group_customer': 1}</field>
+    </record>
+
+    <!-- Health Check History List -->
+    <record id="view_qa_health_check_history_list" model="ir.ui.view">
+        <field name="name">qa.health.check.history.list</field>
+        <field name="model">qa.health.check.history</field>
+        <field name="arch" type="xml">
+            <list string="Check History" create="0" edit="0">
+                <field name="check_time"/>
+                <field name="status" widget="badge" decoration-success="status == 'ok'" decoration-warning="status == 'warning'" decoration-danger="status == 'critical'"/>
+                <field name="value"/>
+                <field name="message"/>
+            </list>
+        </field>
+    </record>
+</odoo>

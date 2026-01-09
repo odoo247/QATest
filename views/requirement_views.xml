@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Requirement Form View -->
+    <record id="view_qa_requirement_form" model="ir.ui.view">
+        <field name="name">qa.requirement.form</field>
+        <field name="model">qa.requirement</field>
+        <field name="arch" type="xml">
+            <form string="Customer Requirement">
+                <header>
+                    <button name="action_generate_tests" string="Generate Tests" type="object" class="btn-primary" invisible="state not in ('approved', 'implementing')"/>
+                    <button name="action_verify" string="Mark Verified" type="object" class="btn-success" invisible="state != 'deployed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved,implementing,testing,deployed,verified"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(qa_test_generator.action_qa_test_case)d" type="action" class="oe_stat_button" icon="fa-check-square-o" context="{'search_default_requirement_id': active_id}">
+                            <field name="test_count" string="Tests" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Verified" bg_color="text-bg-success" invisible="state != 'verified'"/>
+                    <div class="oe_title">
+                        <label for="code"/>
+                        <h1><field name="code" placeholder="REQ-001"/></h1>
+                        <label for="name"/>
+                        <h2><field name="name" placeholder="Requirement title..."/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="customer_id"/>
+                            <field name="category"/>
+                            <field name="priority"/>
+                        </group>
+                        <group>
+                            <field name="affected_modules"/>
+                            <field name="affected_models"/>
+                            <field name="git_branch"/>
+                            <field name="last_test_result" widget="badge" decoration-success="last_test_result == 'passed'" decoration-danger="last_test_result == 'failed'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description" name="description">
+                            <field name="description" placeholder="What does the customer need?"/>
+                        </page>
+                        <page string="Acceptance Criteria" name="criteria">
+                            <field name="acceptance_criteria" placeholder="How do we know it's working correctly?"/>
+                        </page>
+                        <page string="Business Value" name="value">
+                            <field name="business_value" placeholder="Why is this important?"/>
+                        </page>
+                        <page string="Implementation" name="implementation">
+                            <field name="git_commits" placeholder="Related commit hashes..."/>
+                        </page>
+                        <page string="Verification" name="verification" invisible="state not in ('deployed', 'verified')">
+                            <group>
+                                <field name="verified_date"/>
+                                <field name="verified_by_id"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Requirement List View -->
+    <record id="view_qa_requirement_list" model="ir.ui.view">
+        <field name="name">qa.requirement.list</field>
+        <field name="model">qa.requirement</field>
+        <field name="arch" type="xml">
+            <list string="Requirements" default_order="customer_id, sequence">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="category" optional="show"/>
+                <field name="priority"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state in ('approved', 'implementing')" decoration-primary="state == 'testing'" decoration-success="state in ('deployed', 'verified')"/>
+                <field name="test_count"/>
+                <field name="last_test_result" widget="badge" decoration-success="last_test_result == 'passed'" decoration-danger="last_test_result == 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Requirement Search View -->
+    <record id="view_qa_requirement_search" model="ir.ui.view">
+        <field name="name">qa.requirement.search</field>
+        <field name="model">qa.requirement</field>
+        <field name="arch" type="xml">
+            <search string="Requirements">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="customer_id"/>
+                <separator/>
+                <filter string="My Customers" name="my_customers" domain="[('customer_id.user_id', '=', uid)]"/>
+                <separator/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="In Development" name="implementing" domain="[('state', '=', 'implementing')]"/>
+                <filter string="Testing" name="testing" domain="[('state', '=', 'testing')]"/>
+                <filter string="Deployed" name="deployed" domain="[('state', '=', 'deployed')]"/>
+                <filter string="Verified" name="verified" domain="[('state', '=', 'verified')]"/>
+                <separator/>
+                <filter string="Tests Passed" name="passed" domain="[('last_test_result', '=', 'passed')]"/>
+                <filter string="Tests Failed" name="failed" domain="[('last_test_result', '=', 'failed')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Customer" name="group_customer" context="{'group_by': 'customer_id'}"/>
+                    <filter string="Category" name="group_category" context="{'group_by': 'category'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Requirement Kanban View -->
+    <record id="view_qa_requirement_kanban" model="ir.ui.view">
+        <field name="name">qa.requirement.kanban</field>
+        <field name="model">qa.requirement</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="category"/>
+                <field name="priority"/>
+                <field name="test_count"/>
+                <field name="last_test_result"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_top">
+                                    <strong><field name="code"/></strong>
+                                    <field name="priority" widget="priority"/>
+                                </div>
+                                <div><field name="name"/></div>
+                                <div class="text-muted"><field name="customer_id"/></div>
+                                <div class="o_kanban_record_bottom">
+                                    <span><i class="fa fa-check-square-o"/> <field name="test_count"/> tests</span>
+                                    <span t-if="record.last_test_result.raw_value == 'passed'" class="badge text-bg-success">Passed</span>
+                                    <span t-if="record.last_test_result.raw_value == 'failed'" class="badge text-bg-danger">Failed</span>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Requirement Action -->
+    <record id="action_qa_requirement" model="ir.actions.act_window">
+        <field name="name">Requirements</field>
+        <field name="res_model">qa.requirement</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_qa_requirement_search"/>
+        <field name="context">{'search_default_group_customer': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first customer requirement
+            </p>
+            <p>
+                Requirements capture what the customer needs. Tests are generated from requirements.
+            </p>
+        </field>
+    </record>
+</odoo>

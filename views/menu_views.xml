@@ -13,6 +13,13 @@
               action="action_qa_customer"
               sequence="5"/>
     
+    <!-- Requirements Menu (Top Level) -->
+    <menuitem id="menu_qa_requirements"
+              name="Requirements"
+              parent="menu_qa_test_root"
+              action="action_qa_requirement"
+              sequence="8"/>
+    
     <!-- Dashboard Menu -->
     <menuitem id="menu_qa_dashboard"
               name="Dashboard"
@@ -44,6 +51,24 @@
               action="action_qa_test_case"
               sequence="30"/>
     
+    <!-- Regression Testing Menu -->
+    <menuitem id="menu_qa_regression"
+              name="Regression Testing"
+              parent="menu_qa_test_root"
+              sequence="25"/>
+    
+    <menuitem id="menu_qa_regression_suite"
+              name="Regression Suites"
+              parent="menu_qa_regression"
+              action="action_qa_regression_suite"
+              sequence="10"/>
+    
+    <menuitem id="menu_qa_regression_template"
+              name="Test Templates"
+              parent="menu_qa_regression"
+              action="action_qa_regression_template"
+              sequence="20"/>
+    
     <!-- Execution Menu -->
     <menuitem id="menu_qa_test_execution"
               name="Execution"
@@ -61,6 +86,18 @@
               parent="menu_qa_test_execution"
               action="action_qa_test_result"
               sequence="20"/>
+    
+    <!-- Monitoring Menu -->
+    <menuitem id="menu_qa_monitoring"
+              name="Monitoring"
+              parent="menu_qa_test_root"
+              sequence="40"/>
+    
+    <menuitem id="menu_qa_health_check"
+              name="Health Checks"
+              parent="menu_qa_monitoring"
+              action="action_qa_health_check"
+              sequence="10"/>
     
     <!-- Configuration Menu -->
     <menuitem id="menu_qa_test_config"

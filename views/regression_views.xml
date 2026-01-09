@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Regression Template Form View -->
+    <record id="view_qa_regression_template_form" model="ir.ui.view">
+        <field name="name">qa.regression.template.form</field>
+        <field name="model">qa.regression.template</field>
+        <field name="arch" type="xml">
+            <form string="Regression Template">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Test template name..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="module_name"/>
+                            <field name="test_type"/>
+                            <field name="tags"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description" name="description">
+                            <field name="description"/>
+                            <separator string="Preconditions"/>
+                            <field name="preconditions"/>
+                            <separator string="Test Steps"/>
+                            <field name="test_steps"/>
+                            <separator string="Expected Result"/>
+                            <field name="expected_result"/>
+                        </page>
+                        <page string="Robot Code" name="robot">
+                            <field name="robot_code" widget="ace" options="{'mode': 'robot'}"/>
+                        </page>
+                        <page string="Parameters" name="params">
+                            <field name="parameter_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="description"/>
+                                    <field name="default_value"/>
+                                    <field name="required"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Regression Template List View -->
+    <record id="view_qa_regression_template_list" model="ir.ui.view">
+        <field name="name">qa.regression.template.list</field>
+        <field name="model">qa.regression.template</field>
+        <field name="arch" type="xml">
+            <list string="Regression Templates">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="module_name"/>
+                <field name="test_type"/>
+                <field name="tags"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Regression Template Search View -->
+    <record id="view_qa_regression_template_search" model="ir.ui.view">
+        <field name="name">qa.regression.template.search</field>
+        <field name="model">qa.regression.template</field>
+        <field name="arch" type="xml">
+            <search string="Regression Templates">
+                <field name="name"/>
+                <field name="module_name"/>
+                <separator/>
+                <filter string="Sales" name="sale" domain="[('module_name', '=', 'sale')]"/>
+                <filter string="Purchase" name="purchase" domain="[('module_name', '=', 'purchase')]"/>
+                <filter string="Inventory" name="stock" domain="[('module_name', '=', 'stock')]"/>
+                <filter string="Accounting" name="account" domain="[('module_name', '=', 'account')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Module" name="group_module" context="{'group_by': 'module_name'}"/>
+                    <filter string="Test Type" name="group_type" context="{'group_by': 'test_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Regression Template Action -->
+    <record id="action_qa_regression_template" model="ir.actions.act_window">
+        <field name="name">Regression Templates</field>
+        <field name="res_model">qa.regression.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_qa_regression_template_search"/>
+        <field name="context">{'search_default_group_module': 1}</field>
+    </record>
+
+    <!-- Regression Suite Form View -->
+    <record id="view_qa_regression_suite_form" model="ir.ui.view">
+        <field name="name">qa.regression.suite.form</field>
+        <field name="model">qa.regression.suite</field>
+        <field name="arch" type="xml">
+            <form string="Regression Suite">
+                <header>
+                    <button name="action_generate_tests" string="Generate Tests" type="object" class="btn-primary"/>
+                    <button name="action_run_suite" string="Run Suite" type="object" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-check-square-o" type="object" name="action_view_tests" invisible="1">
+                            <field name="test_count" string="Tests" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Suite name..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="customer_id"/>
+                            <field name="module_names" placeholder="sale,purchase,stock,account"/>
+                        </group>
+                        <group>
+                            <field name="last_run_date"/>
+                            <field name="last_run_result" widget="badge" decoration-success="last_run_result == 'passed'" decoration-danger="last_run_result == 'failed'"/>
+                            <field name="pass_rate" widget="progressbar"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Test Cases" name="tests">
+                            <field name="test_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="category"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="last_run_date"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Regression Suite List View -->
+    <record id="view_qa_regression_suite_list" model="ir.ui.view">
+        <field name="name">qa.regression.suite.list</field>
+        <field name="model">qa.regression.suite</field>
+        <field name="arch" type="xml">
+            <list string="Regression Suites">
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="module_names"/>
+                <field name="test_count"/>
+                <field name="last_run_result" widget="badge" decoration-success="last_run_result == 'passed'" decoration-danger="last_run_result == 'failed'"/>
+                <field name="pass_rate" widget="progressbar"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Regression Suite Action -->
+    <record id="action_qa_regression_suite" model="ir.actions.act_window">
+        <field name="name">Regression Suites</field>
+        <field name="res_model">qa.regression.suite</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

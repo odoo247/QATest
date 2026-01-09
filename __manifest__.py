@@ -1,35 +1,46 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'QA Test Generator',
-    'version': '18.0.1.0.0',
+    'version': '18.0.2.0.0',
     'category': 'Productivity/Testing',
-    'summary': 'AI-Powered Test Generation for Odoo',
+    'summary': 'AI-Powered QA Testing for Odoo ERP Implementations',
     'description': """
-QA Test Generator - AI-Powered Automated Testing
-=================================================
+QA Test Generator - Complete ERP Implementation Testing Platform
+================================================================
 
-This module provides a complete solution for automated test generation
-and execution using AI (Claude) and Robot Framework.
+This module provides a comprehensive solution for QA testing across
+multiple customer implementations, with AI-powered test generation,
+health monitoring, and regression testing.
 
-Features
---------
-* Write functional specifications in plain text
-* AI automatically analyzes Odoo modules (models, views, fields)
-* Fetches source code from GitHub/GitLab/Bitbucket for deep analysis
-* Generates Robot Framework test cases with negative scenarios
-* Integrates with Jenkins for CI/CD
-* Dashboard for test results and analytics
-* Screenshot capture on failures
-* Email notifications
+Key Features
+------------
+* **Requirement-Driven Testing**: Link tests to customer requirements
+* **AI Test Generation**: Claude AI generates Robot Framework tests
+* **Multi-Customer Support**: Manage QA for unlimited customers
+* **Health Monitoring**: Track integrations, data integrity, Studio changes
+* **Regression Testing**: Pre-built templates for standard Odoo modules
+* **Jenkins Integration**: CI/CD pipeline support
+
+What Can Break?
+---------------
+1. YOUR CHANGES - Custom modules, bug fixes, upgrades
+2. CUSTOMER CHANGES - Odoo Studio, settings, access rights
+3. INTEGRATIONS - APIs, EDI, payment gateways, shipping
+4. DATA INTEGRITY - Orphaned records, broken links, imbalances
+5. INFRASTRUCTURE - Server resources, database, backups
+6. SCHEDULED JOBS - Cron failures, email queues
+
+This module helps you catch ALL of these issues before they impact customers.
 
 Configuration
 -------------
 1. Install the module
 2. Go to QA Testing > Configuration > AI Settings
 3. Enter your Anthropic API key
-4. Configure Git repository for source code access
-5. Configure Jenkins connection (optional)
-6. Start creating test specifications!
+4. Add customers and their servers
+5. Create requirements and generate acceptance tests
+6. Set up health checks for integrations
+7. Generate regression test suites
 
 Technical Requirements
 ----------------------
@@ -56,6 +67,9 @@ Technical Requirements
         'data/mail_template_data.xml',
         # Views (actions must be loaded BEFORE menus)
         'views/customer_views.xml',
+        'views/requirement_views.xml',
+        'views/health_check_views.xml',
+        'views/regression_views.xml',
         'views/ai_config_views.xml',
         'views/git_repository_views.xml',
         'views/test_spec_views.xml',

@@ -37,12 +37,29 @@ class QATestCase(models.Model):
     tags = fields.Char(string='Tags', help='Comma-separated tags for Robot Framework')
     
     # Relations
+    customer_id = fields.Many2one('qa.customer', string='Customer',
+                                   ondelete='cascade')
+    requirement_id = fields.Many2one('qa.requirement', string='Requirement',
+                                      ondelete='set null',
+                                      help='Acceptance test for this requirement')
+    regression_suite_id = fields.Many2one('qa.regression.suite', string='Regression Suite',
+                                           ondelete='set null')
+    template_id = fields.Many2one('qa.regression.template', string='Template',
+                                   ondelete='set null')
     spec_id = fields.Many2one('qa.test.spec', string='Source Specification', 
                               ondelete='cascade')
     suite_id = fields.Many2one('qa.test.suite', string='Test Suite',
                                related='spec_id.suite_id', store=True)
     step_ids = fields.One2many('qa.test.step', 'test_case_id', string='Test Steps')
     result_ids = fields.One2many('qa.test.result', 'test_case_id', string='Results')
+    
+    # Test Type
+    test_type = fields.Selection([
+        ('acceptance', 'Acceptance Test'),
+        ('regression', 'Regression Test'),
+        ('integration', 'Integration Test'),
+        ('manual', 'Manual Test'),
+    ], string='Test Type', default='acceptance')
     
     # Robot Framework Code
     robot_code = fields.Text(string='Robot Framework Code', required=True)
@@ -73,6 +90,10 @@ class QATestCase(models.Model):
     last_run_duration = fields.Float(string='Last Duration (s)', readonly=True)
     last_run_result_id = fields.Many2one('qa.test.result', string='Last Result',
                                          compute='_compute_last_run')
+    last_result = fields.Selection([
+        ('passed', 'Passed'),
+        ('failed', 'Failed'),
+    ], string='Last Result Status', compute='_compute_last_run', store=True)
     last_error_message = fields.Text(string='Last Error', readonly=True)
     last_screenshot = fields.Binary(string='Last Screenshot', readonly=True)
     last_screenshot_name = fields.Char(string='Screenshot Name')
