@@ -123,6 +123,18 @@ class QAHealthCheck(models.Model):
             else:
                 record.next_check = fields.Datetime.now()
 
+    def action_view_history(self):
+        """View health check history"""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': f'History - {self.name}',
+            'res_model': 'qa.health.check.history',
+            'view_mode': 'list,form',
+            'domain': [('health_check_id', '=', self.id)],
+            'context': {'default_health_check_id': self.id},
+        }
+
     def action_run_check(self):
         """Run this health check"""
         self.ensure_one()
