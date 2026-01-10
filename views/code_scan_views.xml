@@ -5,7 +5,7 @@
         <field name="name">qa.scanned.module.tree</field>
         <field name="model">qa.scanned.module</field>
         <field name="arch" type="xml">
-            <tree editable="bottom">
+            <list editable="bottom">
                 <field name="selected" widget="boolean_toggle"/>
                 <field name="technical_name"/>
                 <field name="display_name"/>
@@ -20,7 +20,7 @@
                 <button name="action_view_analysis" type="object" 
                         icon="fa-search" title="View Analysis"
                         invisible="state == 'discovered'"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -96,11 +96,11 @@
                         </page>
                         <page string="Generated Suites" name="suites" invisible="not test_suite_ids">
                             <field name="test_suite_ids">
-                                <tree>
+                                <list>
                                     <field name="name"/>
                                     <field name="test_case_count"/>
                                     <field name="state" widget="badge"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Scan Log" name="log">
@@ -165,7 +165,7 @@
         <field name="name">qa.model.analysis.tree</field>
         <field name="model">qa.model.analysis</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="model_name"/>
                 <field name="model_description"/>
                 <field name="inherit_model"/>
@@ -174,7 +174,7 @@
                 <field name="has_workflow" widget="boolean"/>
                 <field name="has_constraints" widget="boolean"/>
                 <field name="test_count"/>
-            </tree>
+            </list>
         </field>
     </record>
 
