@@ -57,7 +57,7 @@ class QATestSuite(models.Model):
         ('ready', 'Ready'),
         ('running', 'Running'),
         ('completed', 'Completed'),
-    ], string='Status', default='draft', compute='_compute_state')
+    ], string='Status', default='draft', compute='_compute_state', store=True)
     
     # Last run info
     last_run_id = fields.Many2one('qa.test.run', string='Last Run', 

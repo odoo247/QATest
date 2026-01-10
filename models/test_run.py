@@ -62,17 +62,17 @@ class QATestRun(models.Model):
     # Timing
     start_time = fields.Datetime(string='Start Time')
     end_time = fields.Datetime(string='End Time')
-    duration = fields.Float(string='Duration (s)', compute='_compute_duration')
+    duration = fields.Float(string='Duration (s)', compute='_compute_duration', store=True)
     duration_display = fields.Char(string='Duration', compute='_compute_duration_display')
     
     # Results
     result_ids = fields.One2many('qa.test.result', 'run_id', string='Results')
-    total_tests = fields.Integer(string='Total Tests', compute='_compute_statistics')
-    passed_tests = fields.Integer(string='Passed', compute='_compute_statistics')
-    failed_tests = fields.Integer(string='Failed', compute='_compute_statistics')
-    error_tests = fields.Integer(string='Errors', compute='_compute_statistics')
-    skipped_tests = fields.Integer(string='Skipped', compute='_compute_statistics')
-    pass_rate = fields.Float(string='Pass Rate (%)', compute='_compute_statistics')
+    total_tests = fields.Integer(string='Total Tests', compute='_compute_statistics', store=True)
+    passed_tests = fields.Integer(string='Passed', compute='_compute_statistics', store=True)
+    failed_tests = fields.Integer(string='Failed', compute='_compute_statistics', store=True)
+    error_tests = fields.Integer(string='Errors', compute='_compute_statistics', store=True)
+    skipped_tests = fields.Integer(string='Skipped', compute='_compute_statistics', store=True)
+    pass_rate = fields.Float(string='Pass Rate (%)', compute='_compute_statistics', store=True)
     
     # Logs and Reports
     log = fields.Text(string='Execution Log')

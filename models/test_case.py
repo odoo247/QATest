@@ -93,7 +93,7 @@ class QATestCase(models.Model):
     last_result = fields.Selection([
         ('passed', 'Passed'),
         ('failed', 'Failed'),
-    ], string='Last Result Status', compute='_compute_last_run')
+    ], string='Last Result Status', compute='_compute_last_run', store=True)
     last_error_message = fields.Text(string='Last Error', readonly=True)
     last_screenshot = fields.Binary(string='Last Screenshot', readonly=True)
     last_screenshot_name = fields.Char(string='Screenshot Name')

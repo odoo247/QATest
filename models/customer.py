@@ -48,13 +48,13 @@ class QACustomer(models.Model):
     spec_count = fields.Integer(compute='_compute_counts')
     test_count = fields.Integer(compute='_compute_counts')
     suite_count = fields.Integer(compute='_compute_counts')
-    last_run_date = fields.Datetime(compute='_compute_last_run')
+    last_run_date = fields.Datetime(compute='_compute_last_run', store=True)
     last_run_status = fields.Selection([
         ('passed', 'Passed'),
         ('failed', 'Failed'),
         ('error', 'Error'),
-    ], compute='_compute_last_run')
-    pass_rate = fields.Float(compute='_compute_pass_rate')
+    ], compute='_compute_last_run', store=True)
+    pass_rate = fields.Float(compute='_compute_pass_rate', store=True)
     
     # Notes
     notes = fields.Text(string='Notes')
