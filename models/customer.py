@@ -164,7 +164,7 @@ class QACustomer(models.Model):
         scan = self.env['qa.code.scan'].create({
             'customer_id': self.id,
             'repository_id': self.repository_ids[0].id,
-            'branch': self.repository_ids[0].default_branch or 'main',
+            'branch': self.repository_ids[0].branch or 'main',
         })
         
         return {

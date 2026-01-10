@@ -80,7 +80,7 @@ class QACodeScan(models.Model):
     @api.onchange('repository_id')
     def _onchange_repository_id(self):
         if self.repository_id:
-            self.branch = self.repository_id.default_branch or 'main'
+            self.branch = self.repository_id.branch or 'main'
 
     def action_scan_repository(self):
         """Scan repository for Odoo modules"""
