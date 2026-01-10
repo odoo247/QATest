@@ -45,6 +45,7 @@ class QACustomer(models.Model):
     
     # Statistics
     server_count = fields.Integer(compute='_compute_counts')
+    repository_count = fields.Integer(compute='_compute_counts')
     spec_count = fields.Integer(compute='_compute_counts')
     test_count = fields.Integer(compute='_compute_counts')
     suite_count = fields.Integer(compute='_compute_counts')
@@ -63,10 +64,11 @@ class QACustomer(models.Model):
         ('code_unique', 'UNIQUE(code)', 'Customer code must be unique'),
     ]
 
-    @api.depends('server_ids', 'spec_ids', 'suite_ids', 'spec_ids.test_case_ids')
+    @api.depends('server_ids', 'repository_ids', 'spec_ids', 'suite_ids', 'spec_ids.test_case_ids')
     def _compute_counts(self):
         for record in self:
             record.server_count = len(record.server_ids)
+            record.repository_count = len(record.repository_ids)
             record.spec_count = len(record.spec_ids)
             record.suite_count = len(record.suite_ids)
             record.test_count = sum(len(spec.test_case_ids) for spec in record.spec_ids)
@@ -149,6 +151,29 @@ class QACustomer(models.Model):
                 'default_customer_id': self.id,
                 'default_suite_ids': [(6, 0, self.suite_ids.ids)],
             },
+        }
+
+    def action_scan_and_generate(self):
+        """Open code scan wizard to scan repos and generate tests"""
+        self.ensure_one()
+        if not self.repository_ids:
+            raise UserError("No Git repositories configured for this customer. "
+                          "Please add a repository in Configuration > Git Repositories first.")
+        
+        # Create a new code scan and open it
+        scan = self.env['qa.code.scan'].create({
+            'customer_id': self.id,
+            'repository_id': self.repository_ids[0].id,
+            'branch': self.repository_ids[0].default_branch or 'main',
+        })
+        
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Scan & Generate Tests',
+            'res_model': 'qa.code.scan',
+            'res_id': scan.id,
+            'view_mode': 'form',
+            'target': 'current',
         }
 
 

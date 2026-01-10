@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'QA Test Generator',
-    'version': '18.0.2.0.0',
+    'version': '18.0.2.1.0',
     'category': 'Productivity/Testing',
     'summary': 'AI-Powered QA Testing for Odoo ERP Implementations',
     'description': """
@@ -14,6 +14,7 @@ health monitoring, and regression testing.
 
 Key Features
 ------------
+* **Code-First Testing**: Scan Git repos, auto-generate tests from source code
 * **Requirement-Driven Testing**: Link tests to customer requirements
 * **AI Test Generation**: Claude AI generates Robot Framework tests
 * **Multi-Customer Support**: Manage QA for unlimited customers
@@ -37,10 +38,11 @@ Configuration
 1. Install the module
 2. Go to QA Testing > Configuration > AI Settings
 3. Enter your Anthropic API key
-4. Add customers and their servers
-5. Create requirements and generate acceptance tests
-6. Set up health checks for integrations
-7. Generate regression test suites
+4. Add customers and their Git repositories
+5. Use Code Scanning to generate tests from source code
+6. Or create requirements and generate acceptance tests
+7. Set up health checks for integrations
+8. Generate regression test suites
 
 Technical Requirements
 ----------------------
@@ -48,6 +50,7 @@ Technical Requirements
 * Selenium or Playwright
 * Anthropic API key (Claude)
 * Jenkins (optional, for CI/CD)
+* Git (for code scanning)
     """,
     'author': 'QA Automation Team',
     'website': 'https://www.yourcompany.com',
@@ -69,6 +72,7 @@ Technical Requirements
         'views/customer_views.xml',
         'views/ai_config_views.xml',
         'views/git_repository_views.xml',
+        'views/code_scan_views.xml',
         'views/test_spec_views.xml',
         'views/test_case_views.xml',
         'views/test_suite_views.xml',

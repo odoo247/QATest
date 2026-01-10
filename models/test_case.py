@@ -50,6 +50,20 @@ class QATestCase(models.Model):
                               ondelete='cascade')
     suite_id = fields.Many2one('qa.test.suite', string='Test Suite',
                                related='spec_id.suite_id')
+    
+    # Code-First Generation
+    code_scan_id = fields.Many2one('qa.code.scan', string='Code Scan',
+                                    ondelete='set null')
+    model_analysis_id = fields.Many2one('qa.model.analysis', string='Model Analysis',
+                                         ondelete='set null')
+    generation_source = fields.Selection([
+        ('manual', 'Manual'),
+        ('specification', 'From Specification'),
+        ('requirement', 'From Requirement'),
+        ('code_scan', 'From Code Scan'),
+        ('template', 'From Template'),
+    ], string='Generation Source', default='manual')
+    
     step_ids = fields.One2many('qa.test.step', 'test_case_id', string='Test Steps')
     result_ids = fields.One2many('qa.test.result', 'test_case_id', string='Results')
     

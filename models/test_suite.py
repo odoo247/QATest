@@ -22,6 +22,13 @@ class QATestSuite(models.Model):
                                    ondelete='cascade',
                                    help='Customer this suite belongs to')
     
+    # Code Scan (for code-first generation)
+    code_scan_id = fields.Many2one('qa.code.scan', string='Code Scan',
+                                    ondelete='set null',
+                                    help='Code scan that generated this suite')
+    scanned_module_id = fields.Many2one('qa.scanned.module', string='Scanned Module',
+                                         ondelete='set null')
+    
     description = fields.Text(string='Description')
     
     # Relations

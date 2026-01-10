@@ -56,3 +56,12 @@ access_qa_regression_template_param_manager,qa.regression.template.param manager
 access_qa_regression_suite_admin,qa.regression.suite admin,model_qa_regression_suite,group_qa_admin,1,1,1,1
 access_qa_regression_suite_manager,qa.regression.suite manager,model_qa_regression_suite,group_qa_manager,1,1,1,1
 access_qa_regression_suite_user,qa.regression.suite user,model_qa_regression_suite,group_qa_user,1,0,0,0
+access_qa_code_scan_admin,qa.code.scan admin,model_qa_code_scan,group_qa_admin,1,1,1,1
+access_qa_code_scan_manager,qa.code.scan manager,model_qa_code_scan,group_qa_manager,1,1,1,1
+access_qa_code_scan_user,qa.code.scan user,model_qa_code_scan,group_qa_user,1,0,0,0
+access_qa_scanned_module_admin,qa.scanned.module admin,model_qa_scanned_module,group_qa_admin,1,1,1,1
+access_qa_scanned_module_manager,qa.scanned.module manager,model_qa_scanned_module,group_qa_manager,1,1,1,0
+access_qa_scanned_module_user,qa.scanned.module user,model_qa_scanned_module,group_qa_user,1,0,0,0
+access_qa_model_analysis_admin2,qa.model.analysis admin2,model_qa_model_analysis,group_qa_admin,1,1,1,1
+access_qa_model_analysis_manager2,qa.model.analysis manager2,model_qa_model_analysis,group_qa_manager,1,1,1,0
+access_qa_model_analysis_user2,qa.model.analysis user2,model_qa_model_analysis,group_qa_user,1,0,0,0

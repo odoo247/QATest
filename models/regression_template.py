@@ -379,18 +379,6 @@ class QARegressionSuite(models.Model):
         for record in self:
             record.test_count = len(record.test_ids)
 
-    def action_view_tests(self):
-        """View test cases in this regression suite"""
-        self.ensure_one()
-        return {
-            'type': 'ir.actions.act_window',
-            'name': f'Tests - {self.name}',
-            'res_model': 'qa.test.case',
-            'view_mode': 'list,form',
-            'domain': [('regression_suite_id', '=', self.id)],
-            'context': {'default_regression_suite_id': self.id, 'default_customer_id': self.customer_id.id},
-        }
-
     def action_generate_tests(self):
         """Generate regression tests from templates"""
         self.ensure_one()
@@ -438,6 +426,18 @@ class QARegressionSuite(models.Model):
                 'message': f'Created {count} regression tests',
                 'type': 'success',
             }
+        }
+
+    def action_view_tests(self):
+        """View test cases in this regression suite"""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': f'Tests - {self.name}',
+            'res_model': 'qa.test.case',
+            'view_mode': 'list,form',
+            'domain': [('regression_suite_id', '=', self.id)],
+            'context': {'default_regression_suite_id': self.id, 'default_customer_id': self.customer_id.id},
         }
 
     def action_run_suite(self):

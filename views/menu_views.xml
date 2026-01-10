@@ -20,6 +20,24 @@
               action="action_qa_requirement"
               sequence="8"/>
     
+    <!-- Code Scanning Menu (Top Level) -->
+    <menuitem id="menu_qa_code_scanning"
+              name="Code Scanning"
+              parent="menu_qa_test_root"
+              sequence="9"/>
+    
+    <menuitem id="menu_qa_code_scan"
+              name="Scan &amp; Generate"
+              parent="menu_qa_code_scanning"
+              action="action_qa_code_scan"
+              sequence="10"/>
+    
+    <menuitem id="menu_qa_model_analysis"
+              name="Model Analyses"
+              parent="menu_qa_code_scanning"
+              action="action_qa_model_analysis"
+              sequence="20"/>
+    
     <!-- Dashboard Menu -->
     <menuitem id="menu_qa_dashboard"
               name="Dashboard"

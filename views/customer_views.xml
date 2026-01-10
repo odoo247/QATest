@@ -7,6 +7,9 @@
         <field name="arch" type="xml">
             <form string="Customer">
                 <header>
+                    <button name="action_scan_and_generate" type="object"
+                            string="🔍 Scan &amp; Generate Tests" class="btn-secondary"
+                            invisible="repository_count == 0"/>
                     <button name="action_run_all_tests" type="object"
                             string="▶ Run All Tests" class="btn-primary"
                             invisible="suite_count == 0"/>

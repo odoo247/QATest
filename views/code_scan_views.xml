@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Code Scan Form View -->
+    <record id="view_qa_code_scan_form" model="ir.ui.view">
+        <field name="name">qa.code.scan.form</field>
+        <field name="model">qa.code.scan</field>
+        <field name="arch" type="xml">
+            <form string="Code Scan">
+                <header>
+                    <button name="action_scan_repository" string="Scan Repository" 
+                            type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_analyze_modules" string="Analyze Modules" 
+                            type="object" class="btn-primary"
+                            invisible="state != 'scanned'"/>
+                    <button name="action_generate_tests" string="Generate Tests" 
+                            type="object" class="btn-primary"
+                            invisible="state != 'analyzed'"/>
+                    <button name="action_scan_and_generate" string="Full Scan &amp; Generate" 
+                            type="object" class="btn-secondary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_reset_draft" string="Reset to Draft" 
+                            type="object"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="draft,scanned,analyzed,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-cubes" type="object" 
+                                name="action_view_suites" invisible="test_count == 0">
+                            <field name="test_count" string="Tests" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Scan Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Source">
+                            <field name="customer_id" options="{'no_create': True}"/>
+                            <field name="repository_id" options="{'no_create': True}"/>
+                            <field name="branch"/>
+                        </group>
+                        <group string="Scan Info">
+                            <field name="scan_date" readonly="1"/>
+                            <field name="commit_hash" readonly="1"/>
+                            <field name="commit_message" readonly="1"/>
+                            <field name="module_count" readonly="1"/>
+                            <field name="selected_module_count" readonly="1"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Modules" name="modules">
+                            <field name="module_ids">
+                                <tree editable="bottom" decoration-muted="not selected">
+                                    <field name="selected" widget="boolean_toggle"/>
+                                    <field name="technical_name"/>
+                                    <field name="display_name"/>
+                                    <field name="version"/>
+                                    <field name="model_count"/>
+                                    <field name="view_count"/>
+                                    <field name="depends"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'discovered'"
+                                           decoration-warning="state == 'analyzed'"
+                                           decoration-success="state == 'generated'"/>
+                                    <button name="action_view_analysis" type="object" 
+                                            icon="fa-search" title="View Analysis"
+                                            invisible="state == 'discovered'"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Generation Options" name="options">
+                            <group>
+                                <group string="Test Categories">
+                                    <field name="include_crud_tests"/>
+                                    <field name="include_validation_tests"/>
+                                    <field name="include_workflow_tests"/>
+                                    <field name="include_security_tests"/>
+                                    <field name="include_negative_tests"/>
+                                </group>
+                                <group string="Limits">
+                                    <field name="max_tests_per_model"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Generated Suites" name="suites" invisible="not test_suite_ids">
+                            <field name="test_suite_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="test_case_count"/>
+                                    <field name="state" widget="badge"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Scan Log" name="log">
+                            <field name="scan_log" readonly="1" widget="text"/>
+                            <field name="error_message" readonly="1" 
+                                   invisible="not error_message"
+                                   class="text-danger"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Code Scan List View -->
+    <record id="view_qa_code_scan_list" model="ir.ui.view">
+        <field name="name">qa.code.scan.list</field>
+        <field name="model">qa.code.scan</field>
+        <field name="arch" type="xml">
+            <list string="Code Scans" default_order="scan_date desc">
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="repository_id"/>
+                <field name="branch"/>
+                <field name="scan_date"/>
+                <field name="module_count"/>
+                <field name="test_count"/>
+                <field name="state" widget="badge"
+                       decoration-info="state in ('draft', 'scanning', 'analyzing')"
+                       decoration-warning="state == 'generating'"
+                       decoration-success="state == 'done'"
+                       decoration-danger="state == 'error'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Code Scan Search View -->
+    <record id="view_qa_code_scan_search" model="ir.ui.view">
+        <field name="name">qa.code.scan.search</field>
+        <field name="model">qa.code.scan</field>
+        <field name="arch" type="xml">
+            <search string="Code Scans">
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="repository_id"/>
+                <separator/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="Error" name="error" domain="[('state', '=', 'error')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Customer" name="group_customer" context="{'group_by': 'customer_id'}"/>
+                    <filter string="Repository" name="group_repo" context="{'group_by': 'repository_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Scanned Module Form View -->
+    <record id="view_qa_scanned_module_form" model="ir.ui.view">
+        <field name="name">qa.scanned.module.form</field>
+        <field name="model">qa.scanned.module</field>
+        <field name="arch" type="xml">
+            <form string="Scanned Module">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="technical_name"/>
+                        </h1>
+                        <h3>
+                            <field name="display_name"/>
+                        </h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="version"/>
+                            <field name="path"/>
+                            <field name="depends"/>
+                        </group>
+                        <group>
+                            <field name="model_count"/>
+                            <field name="view_count"/>
+                            <field name="state" widget="badge"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Model Analyses" name="analyses">
+                            <field name="analysis_ids">
+                                <tree>
+                                    <field name="model_name"/>
+                                    <field name="model_description"/>
+                                    <field name="inherit_model"/>
+                                    <field name="field_count"/>
+                                    <field name="method_count"/>
+                                    <field name="has_workflow" widget="boolean"/>
+                                    <field name="has_constraints" widget="boolean"/>
+                                    <field name="test_count"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Model Analysis Form View -->
+    <record id="view_qa_model_analysis_form" model="ir.ui.view">
+        <field name="name">qa.model.analysis.form</field>
+        <field name="model">qa.model.analysis</field>
+        <field name="arch" type="xml">
+            <form string="Model Analysis">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="model_name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="model_description"/>
+                            <field name="inherit_model"/>
+                            <field name="module_id"/>
+                        </group>
+                        <group>
+                            <field name="field_count"/>
+                            <field name="method_count"/>
+                            <field name="has_workflow"/>
+                            <field name="has_constraints"/>
+                            <field name="test_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Suggested Tests" name="suggested">
+                            <field name="suggested_tests" readonly="1"/>
+                        </page>
+                        <page string="Full Analysis (JSON)" name="json">
+                            <field name="analysis_json" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Model Analysis List View -->
+    <record id="view_qa_model_analysis_list" model="ir.ui.view">
+        <field name="name">qa.model.analysis.list</field>
+        <field name="model">qa.model.analysis</field>
+        <field name="arch" type="xml">
+            <list string="Model Analyses">
+                <field name="model_name"/>
+                <field name="model_description"/>
+                <field name="module_id"/>
+                <field name="field_count"/>
+                <field name="method_count"/>
+                <field name="has_workflow" widget="boolean"/>
+                <field name="has_constraints" widget="boolean"/>
+                <field name="test_count"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Code Scan Action -->
+    <record id="action_qa_code_scan" model="ir.actions.act_window">
+        <field name="name">Code Scans</field>
+        <field name="res_model">qa.code.scan</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Scan source code to generate tests
+            </p>
+            <p>
+                Point at a Git repository and let AI analyze your Odoo modules 
+                to automatically generate comprehensive test cases.
+            </p>
+        </field>
+    </record>
+
+    <!-- Model Analysis Action -->
+    <record id="action_qa_model_analysis" model="ir.actions.act_window">
+        <field name="name">Model Analyses</field>
+        <field name="res_model">qa.model.analysis</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>
