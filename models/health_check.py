@@ -80,7 +80,7 @@ class QAHealthCheck(models.Model):
         ('weekly', 'Weekly'),
     ], string='Check Interval', default='hourly')
     last_check = fields.Datetime(string='Last Check')
-    next_check = fields.Datetime(string='Next Check', compute='_compute_next_check')
+    next_check = fields.Datetime(string='Next Check', compute='_compute_next_check', store=True)
     
     # Results
     status = fields.Selection([

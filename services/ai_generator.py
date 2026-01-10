@@ -372,6 +372,11 @@ Return ONLY the corrected Robot Framework code, no explanation needed.
             # Parse the response
             scenarios = self._parse_code_test_response(response, model_analysis.model_name)
             
+            # If parsing returned empty, use fallback tests
+            if not scenarios:
+                _logger.warning(f"AI response parsing returned empty for {model_analysis.model_name}, using fallback tests")
+                scenarios = self._generate_fallback_tests(model_analysis, analysis_data)
+            
             return scenarios[:max_tests]
             
         except Exception as e:
@@ -530,45 +535,246 @@ Generate comprehensive tests covering the specified categories. Focus on testing
     def _parse_code_test_response(self, response: str, model_name: str) -> List[Dict[str, Any]]:
         """Parse AI response for code-based test generation"""
         
+        _logger.info(f"Parsing AI response for {model_name}, response length: {len(response)}")
+        
         # Try to find JSON in the response
+        json_str = None
+        
+        # Method 1: Look for ```json code block
         json_match = re.search(r'```json\s*(.*?)\s*```', response, re.DOTALL)
         if json_match:
             json_str = json_match.group(1)
-        else:
-            # Try to find raw JSON
+            _logger.info("Found JSON in code block")
+        
+        # Method 2: Look for raw JSON with test_scenarios
+        if not json_str:
             json_match = re.search(r'\{[\s\S]*"test_scenarios"[\s\S]*\}', response)
             if json_match:
                 json_str = json_match.group(0)
-            else:
-                _logger.warning("No JSON found in code test response")
-                return []
+                _logger.info("Found raw JSON with test_scenarios")
         
+        # Method 3: Look for any JSON object
+        if not json_str:
+            json_match = re.search(r'\{[\s\S]*"name"[\s\S]*"robot_code"[\s\S]*\}', response)
+            if json_match:
+                json_str = json_match.group(0)
+                _logger.info("Found JSON object with name and robot_code")
+        
+        if not json_str:
+            _logger.warning(f"No JSON found in code test response. Response preview: {response[:500]}...")
+            return []
+        
+        # Try to parse JSON, with repair attempts
+        scenarios = self._try_parse_json_with_repair(json_str, model_name)
+        
+        if scenarios:
+            _logger.info(f"Parsed {len(scenarios)} scenarios from JSON")
+        
+        return scenarios
+
+    def _try_parse_json_with_repair(self, json_str: str, model_name: str) -> List[Dict[str, Any]]:
+        """Try to parse JSON with multiple repair strategies"""
+        
+        # Strategy 1: Direct parse
         try:
             data = json.loads(json_str)
-            scenarios = data.get('test_scenarios', [])
-            
-            # Clean up scenarios
-            cleaned = []
-            for i, sc in enumerate(scenarios, 1):
-                if isinstance(sc, dict):
-                    robot_code = sc.get('robot_code', '')
-                    robot_code = robot_code.replace('\\n', '\n')
-                    robot_code = robot_code.replace('\\t', '    ')
-                    
-                    cleaned.append({
-                        'name': sc.get('name', f'test_{model_name.replace(".", "_")}_{i}'),
-                        'test_id': sc.get('test_id', f'TC{i:03d}'),
-                        'description': sc.get('description', ''),
-                        'category': sc.get('category', 'functional'),
-                        'steps': sc.get('steps', []),
-                        'robot_code': robot_code,
-                    })
-            
-            return cleaned
-            
+            return self._extract_scenarios(data, model_name)
+        except json.JSONDecodeError as e:
+            _logger.debug(f"Direct parse failed: {e}")
+        
+        # Strategy 2: Fix unescaped newlines in robot_code strings
+        # The robot_code field often has actual newlines that need escaping
+        try:
+            # Replace newlines inside strings with \n
+            fixed_json = self._fix_robot_code_newlines(json_str)
+            data = json.loads(fixed_json)
+            _logger.info("JSON parsed after fixing robot_code newlines")
+            return self._extract_scenarios(data, model_name)
+        except json.JSONDecodeError as e:
+            _logger.debug(f"Parse after newline fix failed: {e}")
+        
+        # Strategy 3: Extract scenarios individually using regex
+        try:
+            scenarios = self._extract_scenarios_by_regex(json_str, model_name)
+            if scenarios:
+                _logger.info(f"Extracted {len(scenarios)} scenarios via regex")
+                return scenarios
+        except Exception as e:
+            _logger.debug(f"Regex extraction failed: {e}")
+        
+        # Strategy 4: Try removing trailing content after last complete scenario
+        try:
+            fixed_json = self._truncate_to_valid_json(json_str)
+            if fixed_json:
+                data = json.loads(fixed_json)
+                _logger.info("JSON parsed after truncation")
+                return self._extract_scenarios(data, model_name)
         except json.JSONDecodeError as e:
             _logger.warning(f"Failed to parse code test JSON: {e}")
-            return []
+        
+        return []
+
+    def _fix_robot_code_newlines(self, json_str: str) -> str:
+        """Fix unescaped newlines inside robot_code strings"""
+        # Pattern to find robot_code values and escape their newlines
+        def escape_robot_code(match):
+            prefix = match.group(1)
+            content = match.group(2)
+            # Escape newlines that aren't already escaped
+            content = content.replace('\n', '\\n')
+            content = content.replace('\r', '\\r')
+            content = content.replace('\t', '\\t')
+            return f'{prefix}"{content}"'
+        
+        # Match "robot_code": "..." capturing the content
+        # This is tricky because the content may span multiple lines
+        # Use a different approach: find robot_code start, then find its value
+        
+        result = []
+        i = 0
+        while i < len(json_str):
+            # Look for "robot_code"
+            robot_idx = json_str.find('"robot_code"', i)
+            if robot_idx == -1:
+                result.append(json_str[i:])
+                break
+            
+            result.append(json_str[i:robot_idx])
+            
+            # Find the colon and opening quote
+            colon_idx = json_str.find(':', robot_idx)
+            if colon_idx == -1:
+                result.append(json_str[robot_idx:])
+                break
+            
+            # Skip whitespace to find opening quote
+            quote_start = colon_idx + 1
+            while quote_start < len(json_str) and json_str[quote_start] in ' \t\n\r':
+                quote_start += 1
+            
+            if quote_start >= len(json_str) or json_str[quote_start] != '"':
+                result.append(json_str[robot_idx:quote_start+1])
+                i = quote_start + 1
+                continue
+            
+            # Find the closing quote (accounting for escapes)
+            quote_end = quote_start + 1
+            while quote_end < len(json_str):
+                if json_str[quote_end] == '\\' and quote_end + 1 < len(json_str):
+                    quote_end += 2  # Skip escaped char
+                    continue
+                if json_str[quote_end] == '"':
+                    break
+                quote_end += 1
+            
+            # Extract and fix the content
+            content = json_str[quote_start+1:quote_end]
+            # Escape unescaped newlines
+            fixed_content = ''
+            j = 0
+            while j < len(content):
+                if content[j] == '\\' and j + 1 < len(content):
+                    fixed_content += content[j:j+2]
+                    j += 2
+                elif content[j] == '\n':
+                    fixed_content += '\\n'
+                    j += 1
+                elif content[j] == '\r':
+                    fixed_content += '\\r'
+                    j += 1
+                elif content[j] == '\t':
+                    fixed_content += '\\t'
+                    j += 1
+                else:
+                    fixed_content += content[j]
+                    j += 1
+            
+            result.append(f'"robot_code": "{fixed_content}"')
+            i = quote_end + 1
+        
+        return ''.join(result)
+
+    def _extract_scenarios_by_regex(self, json_str: str, model_name: str) -> List[Dict[str, Any]]:
+        """Extract test scenarios using regex when JSON parsing fails"""
+        scenarios = []
+        
+        # Find each scenario block by looking for name/test_id patterns
+        pattern = r'"name"\s*:\s*"([^"]+)"[^}]*?"test_id"\s*:\s*"([^"]+)"[^}]*?"description"\s*:\s*"([^"]*)"'
+        
+        for match in re.finditer(pattern, json_str, re.DOTALL):
+            name, test_id, description = match.groups()
+            
+            # Try to find robot_code near this match
+            start = match.start()
+            end = min(match.end() + 2000, len(json_str))
+            chunk = json_str[start:end]
+            
+            robot_match = re.search(r'"robot_code"\s*:\s*"(.*?)"(?=\s*[,}])', chunk, re.DOTALL)
+            robot_code = robot_match.group(1) if robot_match else ''
+            robot_code = robot_code.replace('\\n', '\n').replace('\\t', '    ')
+            
+            if not robot_code.strip():
+                robot_code = f"*** Test Cases ***\n{name}\n    [Documentation]    {description}\n    Log    TODO: Implement test"
+            
+            scenarios.append({
+                'name': name,
+                'test_id': test_id,
+                'description': description,
+                'category': 'functional',
+                'steps': [],
+                'robot_code': robot_code,
+            })
+        
+        return scenarios
+
+    def _truncate_to_valid_json(self, json_str: str) -> Optional[str]:
+        """Try to truncate JSON to make it valid"""
+        # Find the last complete scenario (ends with })
+        # and close the array and object
+        
+        last_brace = json_str.rfind('}')
+        while last_brace > 0:
+            try:
+                test_str = json_str[:last_brace+1]
+                # Try to close arrays/objects
+                open_brackets = test_str.count('[') - test_str.count(']')
+                open_braces = test_str.count('{') - test_str.count('}')
+                
+                test_str += ']' * open_brackets + '}' * open_braces
+                json.loads(test_str)
+                return test_str
+            except:
+                pass
+            last_brace = json_str.rfind('}', 0, last_brace)
+        
+        return None
+
+    def _extract_scenarios(self, data: Dict, model_name: str) -> List[Dict[str, Any]]:
+        """Extract and clean scenarios from parsed JSON"""
+        scenarios = data.get('test_scenarios', data.get('test_cases', []))
+        
+        cleaned = []
+        for i, sc in enumerate(scenarios, 1):
+            if isinstance(sc, dict):
+                robot_code = sc.get('robot_code', '')
+                # Handle escaped newlines
+                robot_code = robot_code.replace('\\n', '\n')
+                robot_code = robot_code.replace('\\t', '    ')
+                
+                # Make sure we have valid robot code
+                if not robot_code.strip():
+                    robot_code = f"*** Test Cases ***\n{sc.get('name', 'Test')}\n    [Documentation]    {sc.get('description', 'Generated test')}\n    Log    TODO: Implement test"
+                
+                cleaned.append({
+                    'name': sc.get('name', f'test_{model_name.replace(".", "_")}_{i}'),
+                    'test_id': sc.get('test_id', f'TC{i:03d}'),
+                    'description': sc.get('description', ''),
+                    'category': sc.get('category', 'functional'),
+                    'steps': sc.get('steps', []),
+                    'robot_code': robot_code,
+                })
+        
+        return cleaned
 
     def _generate_fallback_tests(self, model_analysis, analysis_data) -> List[Dict[str, Any]]:
         """Generate basic fallback tests when AI fails"""

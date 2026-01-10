@@ -236,6 +236,8 @@ class QACodeScan(models.Model):
                         max_tests=self.max_tests_per_model,
                     )
                     
+                    self._log(f"    AI returned {len(scenarios)} scenarios")
+                    
                     # Create test cases
                     for scenario in scenarios:
                         test_case = self.env['qa.test.case'].create({
