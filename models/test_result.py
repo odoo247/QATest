@@ -19,9 +19,9 @@ class QATestResult(models.Model):
                                    required=True, ondelete='cascade')
     run_id = fields.Many2one('qa.test.run', string='Test Run', ondelete='cascade')
     spec_id = fields.Many2one('qa.test.spec', string='Specification',
-                              related='test_case_id.spec_id', store=True)
+                              related='test_case_id.spec_id')
     suite_id = fields.Many2one('qa.test.suite', string='Suite',
-                               related='test_case_id.suite_id', store=True)
+                               related='test_case_id.suite_id')
     
     # Status
     status = fields.Selection([

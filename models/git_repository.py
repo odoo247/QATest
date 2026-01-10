@@ -345,7 +345,7 @@ class QAModuleSource(models.Model):
     module_id = fields.Many2one('ir.module.module', string='Module', required=True,
                                  domain=[('state', '=', 'installed')],
                                  ondelete='cascade')
-    module_name = fields.Char(related='module_id.name', store=True)
+    module_name = fields.Char(related='module_id.name')
     
     repository_id = fields.Many2one('qa.git.repository', string='Repository', required=True)
     branch = fields.Char(string='Branch', help='Leave empty to use repository default')

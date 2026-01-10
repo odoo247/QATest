@@ -65,17 +65,18 @@ Technical Requirements
         'data/config_data.xml',
         'data/cron_data.xml',
         'data/mail_template_data.xml',
-        # Views (actions must be loaded BEFORE menus)
+        # Views - ORDER MATTERS! Actions must exist before being referenced
         'views/customer_views.xml',
-        'views/requirement_views.xml',
-        'views/health_check_views.xml',
-        'views/regression_views.xml',
         'views/ai_config_views.xml',
         'views/git_repository_views.xml',
         'views/test_spec_views.xml',
         'views/test_case_views.xml',
         'views/test_suite_views.xml',
         'views/test_result_views.xml',
+        # These reference test_case action, must come AFTER
+        'views/requirement_views.xml',
+        'views/health_check_views.xml',
+        'views/regression_views.xml',
         'views/dashboard_views.xml',
         # Menus (loaded AFTER actions)
         'views/menu_views.xml',

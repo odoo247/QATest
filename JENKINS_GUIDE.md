@@ -47,7 +47,6 @@ The QA Test Generator integrates with Jenkins for CI/CD automation, enabling:
 - Parameterized Trigger
 - Email Extension (optional)
 - Slack Notification (optional)
-
 ```
 
 ### Install on Jenkins Server

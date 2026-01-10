@@ -188,3 +188,15 @@ For each test, provide:
             'verified_date': fields.Datetime.now(),
             'verified_by_id': self.env.user.id,
         })
+
+    def action_view_tests(self):
+        """View test cases linked to this requirement"""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': f'Tests - {self.code}',
+            'res_model': 'qa.test.case',
+            'view_mode': 'list,form',
+            'domain': [('requirement_id', '=', self.id)],
+            'context': {'default_requirement_id': self.id, 'default_customer_id': self.customer_id.id},
+        }

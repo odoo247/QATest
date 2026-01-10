@@ -49,7 +49,7 @@ class QATestCase(models.Model):
     spec_id = fields.Many2one('qa.test.spec', string='Source Specification', 
                               ondelete='cascade')
     suite_id = fields.Many2one('qa.test.suite', string='Test Suite',
-                               related='spec_id.suite_id', store=True)
+                               related='spec_id.suite_id')
     step_ids = fields.One2many('qa.test.step', 'test_case_id', string='Test Steps')
     result_ids = fields.One2many('qa.test.result', 'test_case_id', string='Results')
     

@@ -14,7 +14,7 @@ class QAModuleAnalysis(models.Model):
     name = fields.Char(string='Analysis Name', compute='_compute_name')
     module_id = fields.Many2one('ir.module.module', string='Module', required=True,
                                  ondelete='cascade')
-    module_name = fields.Char(string='Technical Name', related='module_id.name', store=True)
+    module_name = fields.Char(string='Technical Name', related='module_id.name')
     
     # Analysis date
     analysis_date = fields.Datetime(string='Analysis Date', default=fields.Datetime.now)

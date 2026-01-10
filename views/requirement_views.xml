@@ -13,7 +13,7 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
-                        <button name="%(qa_test_generator.action_qa_test_case)d" type="action" class="oe_stat_button" icon="fa-check-square-o" context="{'search_default_requirement_id': active_id}">
+                        <button name="action_view_tests" type="object" class="oe_stat_button" icon="fa-check-square-o">
                             <field name="test_count" string="Tests" widget="statinfo"/>
                         </button>
                     </div>
