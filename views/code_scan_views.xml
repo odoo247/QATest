@@ -12,7 +12,7 @@
                 <field name="version"/>
                 <field name="model_count"/>
                 <field name="view_count"/>
-                <field name="depends"/>
+                <field name="test_count" string="Tests"/>
                 <field name="state" widget="badge"
                        decoration-info="state == 'discovered'"
                        decoration-warning="state == 'analyzed'"
@@ -20,6 +20,17 @@
                 <button name="action_view_analysis" type="object" 
                         icon="fa-search" title="View Analysis"
                         invisible="state == 'discovered'"/>
+                <button name="action_view_suite" type="object"
+                        icon="fa-list-alt" title="View Test Suite"
+                        invisible="state != 'generated'"/>
+                <button name="action_reset_module" type="object"
+                        icon="fa-refresh" title="Reset to Analyzed (Regenerate Tests)"
+                        invisible="state != 'generated'"
+                        confirm="This will delete all generated test cases for this module. Continue?"/>
+                <button name="action_reset_to_discovered" type="object"
+                        icon="fa-undo" title="Reset to Discovered (Re-analyze)"
+                        invisible="state == 'discovered'"
+                        confirm="This will delete all analyses and tests for this module. Continue?"/>
             </list>
         </field>
     </record>
@@ -36,16 +47,17 @@
                             invisible="state != 'draft'"/>
                     <button name="action_analyze_modules" string="Analyze Modules" 
                             type="object" class="btn-primary"
-                            invisible="state != 'scanned'"/>
+                            invisible="state not in ('scanned', 'analyzed', 'done')"/>
                     <button name="action_generate_tests" string="Generate Tests" 
                             type="object" class="btn-primary"
-                            invisible="state != 'analyzed'"/>
+                            invisible="state not in ('analyzed', 'done')"/>
                     <button name="action_scan_and_generate" string="Full Scan &amp; Generate" 
                             type="object" class="btn-secondary"
                             invisible="state != 'draft'"/>
-                    <button name="action_reset_draft" string="Reset to Draft" 
+                    <button name="action_reset_draft" string="Reset All" 
                             type="object"
-                            invisible="state == 'draft'"/>
+                            invisible="state == 'draft'"
+                            confirm="This will delete all modules, analyses, and test suites. Continue?"/>
                     <field name="state" widget="statusbar" 
                            statusbar_visible="draft,scanned,analyzed,done"/>
                 </header>

@@ -142,11 +142,17 @@ class QACodeScan(models.Model):
         return True
 
     def action_analyze_modules(self):
-        """Analyze selected modules with AI"""
+        """Analyze selected modules with AI (incremental - skips already analyzed)"""
         self.ensure_one()
         
-        selected = self.module_ids.filtered('selected')
+        # Get selected modules that need analysis (not yet analyzed or generated)
+        selected = self.module_ids.filtered(
+            lambda m: m.selected and m.state == 'discovered'
+        )
         if not selected:
+            already_done = self.module_ids.filtered(lambda m: m.selected and m.state in ('analyzed', 'generated'))
+            if already_done:
+                raise UserError(_("All selected modules are already analyzed. Use 'Reset to Discovered' button on modules to re-analyze."))
             raise UserError(_("Please select at least one module to analyze."))
         
         self.state = 'analyzing'
@@ -164,7 +170,7 @@ class QACodeScan(models.Model):
                 # Parse module
                 analysis = scanner.analyze_module(module_path, module.technical_name)
                 
-                # Clear existing analyses
+                # Clear existing analyses (in case of re-analyze)
                 module.analysis_ids.unlink()
                 
                 # Create analysis records
@@ -197,12 +203,20 @@ class QACodeScan(models.Model):
         return True
 
     def action_generate_tests(self):
-        """Generate tests from analyzed modules"""
+        """Generate tests from analyzed modules (incremental - skips already generated)"""
         self.ensure_one()
         
-        analyzed_modules = self.module_ids.filtered(lambda m: m.selected and m.state == 'analyzed')
+        # Get modules that are analyzed but NOT yet generated
+        analyzed_modules = self.module_ids.filtered(
+            lambda m: m.selected and m.state == 'analyzed'
+        )
         if not analyzed_modules:
-            raise UserError(_("Please analyze modules first."))
+            # Check if user just needs to select different modules
+            ungenerated = self.module_ids.filtered(lambda m: m.state != 'generated')
+            if ungenerated:
+                raise UserError(_("No analyzed modules selected. Please select modules and click 'Analyze Modules' first."))
+            else:
+                raise UserError(_("All selected modules have already been generated. Select additional modules or use 'Reset Module' to regenerate."))
         
         self.state = 'generating'
         total_tests = 0
@@ -213,13 +227,27 @@ class QACodeScan(models.Model):
             for module in analyzed_modules:
                 self._log(f"Generating tests for: {module.technical_name}")
                 
-                # Create test suite for module
-                suite = self.env['qa.test.suite'].create({
-                    'name': f"{self.customer_id.code} - {module.technical_name}",
-                    'customer_id': self.customer_id.id,
-                    'code_scan_id': self.id,
-                    'scanned_module_id': module.id,
-                })
+                # Check if suite already exists for this module
+                existing_suite = self.env['qa.test.suite'].search([
+                    ('code_scan_id', '=', self.id),
+                    ('scanned_module_id', '=', module.id),
+                ], limit=1)
+                
+                if existing_suite:
+                    suite = existing_suite
+                    self._log(f"  Using existing suite: {suite.name}")
+                else:
+                    # Create test suite for module
+                    suite = self.env['qa.test.suite'].create({
+                        'name': f"{self.customer_id.code} - {module.technical_name}",
+                        'customer_id': self.customer_id.id,
+                        'code_scan_id': self.id,
+                        'scanned_module_id': module.id,
+                    })
+                    self._log(f"  Created suite: {suite.name}")
+                
+                # Link suite back to module
+                module.suite_id = suite.id
                 
                 # Generate tests for each model
                 for analysis in module.analysis_ids:
@@ -269,7 +297,7 @@ class QACodeScan(models.Model):
                     analysis.test_count = len(scenarios)
                 
                 module.state = 'generated'
-                self._log(f"  Created {sum(a.test_count for a in module.analysis_ids)} tests")
+                self._log(f"  Created {sum(a.test_count for a in module.analysis_ids)} tests in suite '{suite.name}'")
             
             self._log(f"Test generation complete! Total: {total_tests} tests")
             self.state = 'done'
@@ -315,10 +343,23 @@ class QACodeScan(models.Model):
         }
 
     def action_reset_draft(self):
-        """Reset to draft state"""
+        """Reset to draft state - clears all modules, analyses, and tests"""
         self.ensure_one()
+        
+        # Delete all test cases linked to this scan
+        test_cases = self.env['qa.test.case'].search([('code_scan_id', '=', self.id)])
+        test_cases.unlink()
+        
+        # Delete all test suites linked to this scan
+        suites = self.env['qa.test.suite'].search([('code_scan_id', '=', self.id)])
+        suites.unlink()
+        
+        # Clear modules (cascades to analyses)
+        self.module_ids.unlink()
+        
         self.state = 'draft'
         self.error_message = False
+        self.scan_log = ''
 
     def _log(self, message):
         """Append to scan log"""
