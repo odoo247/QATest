@@ -1,5 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Scanned Module Tree View - must be defined before form that references it -->
+    <record id="view_qa_scanned_module_tree" model="ir.ui.view">
+        <field name="name">qa.scanned.module.tree</field>
+        <field name="model">qa.scanned.module</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom">
+                <field name="selected" widget="boolean_toggle"/>
+                <field name="technical_name"/>
+                <field name="display_name"/>
+                <field name="version"/>
+                <field name="model_count"/>
+                <field name="view_count"/>
+                <field name="depends"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'discovered'"
+                       decoration-warning="state == 'analyzed'"
+                       decoration-success="state == 'generated'"/>
+                <button name="action_view_analysis" type="object" 
+                        icon="fa-search" title="View Analysis"
+                        invisible="state == 'discovered'"/>
+            </tree>
+        </field>
+    </record>
+
     <!-- Code Scan Form View -->
     <record id="view_qa_code_scan_form" model="ir.ui.view">
         <field name="name">qa.code.scan.form</field>
@@ -54,24 +78,7 @@
                     
                     <notebook>
                         <page string="Modules" name="modules">
-                            <field name="module_ids">
-                                <tree editable="bottom">
-                                    <field name="selected" widget="boolean_toggle"/>
-                                    <field name="technical_name"/>
-                                    <field name="display_name"/>
-                                    <field name="version"/>
-                                    <field name="model_count"/>
-                                    <field name="view_count"/>
-                                    <field name="depends"/>
-                                    <field name="state" widget="badge"
-                                           decoration-info="state == 'discovered'"
-                                           decoration-warning="state == 'analyzed'"
-                                           decoration-success="state == 'generated'"/>
-                                    <button name="action_view_analysis" type="object" 
-                                            icon="fa-search" title="View Analysis"
-                                            invisible="state == 'discovered'"/>
-                                </tree>
-                            </field>
+                            <field name="module_ids"/>
                         </page>
                         <page string="Generation Options" name="options">
                             <group>
@@ -153,6 +160,24 @@
         </field>
     </record>
 
+    <!-- Model Analysis Tree View -->
+    <record id="view_qa_model_analysis_tree" model="ir.ui.view">
+        <field name="name">qa.model.analysis.tree</field>
+        <field name="model">qa.model.analysis</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="model_name"/>
+                <field name="model_description"/>
+                <field name="inherit_model"/>
+                <field name="field_count"/>
+                <field name="method_count"/>
+                <field name="has_workflow" widget="boolean"/>
+                <field name="has_constraints" widget="boolean"/>
+                <field name="test_count"/>
+            </tree>
+        </field>
+    </record>
+
     <!-- Scanned Module Form View -->
     <record id="view_qa_scanned_module_form" model="ir.ui.view">
         <field name="name">qa.scanned.module.form</field>
@@ -182,18 +207,7 @@
                     </group>
                     <notebook>
                         <page string="Model Analyses" name="analyses">
-                            <field name="analysis_ids">
-                                <tree>
-                                    <field name="model_name"/>
-                                    <field name="model_description"/>
-                                    <field name="inherit_model"/>
-                                    <field name="field_count"/>
-                                    <field name="method_count"/>
-                                    <field name="has_workflow" widget="boolean"/>
-                                    <field name="has_constraints" widget="boolean"/>
-                                    <field name="test_count"/>
-                                </tree>
-                            </field>
+                            <field name="analysis_ids"/>
                         </page>
                     </notebook>
                 </sheet>

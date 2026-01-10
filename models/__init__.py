@@ -8,6 +8,8 @@ from . import requirement
 from . import health_check
 from . import regression_template
 from . import code_scan
+from . import scanned_module
+from . import model_analysis
 from . import code_scanner
 from . import test_spec
 from . import test_suite
