@@ -257,30 +257,128 @@ class QACustomerServer(models.Model):
         """Test connection to Odoo server"""
         self.ensure_one()
         import requests
+        import json
         
         try:
-            # Test basic connectivity
-            response = requests.get(
-                f"{self.url}/web/webclient/version_info",
+            # Step 1: Test basic connectivity
+            version_url = f"{self.url}/web/webclient/version_info"
+            response = requests.post(
+                version_url,
+                json={"jsonrpc": "2.0", "method": "call", "params": {}, "id": 1},
+                headers={'Content-Type': 'application/json'},
                 timeout=10
             )
-            if response.status_code == 200:
+            
+            if response.status_code != 200:
+                self.connection_status = 'failed'
+                raise UserError(f"Server not reachable: HTTP {response.status_code}")
+            
+            version_data = response.json()
+            server_version = version_data.get('result', {}).get('server_version', 'Unknown')
+            
+            # Step 2: Test authentication if credentials provided
+            if self.auth_type == 'password' and self.username and self.password:
+                auth_url = f"{self.url}/web/session/authenticate"
+                auth_response = requests.post(
+                    auth_url,
+                    json={
+                        "jsonrpc": "2.0",
+                        "method": "call",
+                        "params": {
+                            "db": self.database,
+                            "login": self.username,
+                            "password": self.password,
+                        },
+                        "id": 2
+                    },
+                    headers={'Content-Type': 'application/json'},
+                    timeout=15
+                )
+                
+                if auth_response.status_code != 200:
+                    self.connection_status = 'failed'
+                    raise UserError(f"Authentication request failed: HTTP {auth_response.status_code}")
+                
+                auth_data = auth_response.json()
+                
+                # Check for error in response
+                if auth_data.get('error'):
+                    error_msg = auth_data['error'].get('data', {}).get('message', str(auth_data['error']))
+                    self.connection_status = 'failed'
+                    raise UserError(f"Authentication failed: {error_msg}")
+                
+                # Check if we got a valid uid
+                result = auth_data.get('result', {})
+                uid = result.get('uid')
+                
+                if not uid:
+                    self.connection_status = 'failed'
+                    raise UserError("Authentication failed: Invalid username or password")
+                
                 self.connection_status = 'connected'
                 return {
                     'type': 'ir.actions.client',
                     'tag': 'display_notification',
                     'params': {
                         'title': 'Success',
-                        'message': f'Connected to {self.url}',
+                        'message': f'Connected to {self.url}\nOdoo {server_version}\nDatabase: {self.database}\nUser: {self.username} (UID: {uid})',
                         'type': 'success',
+                        'sticky': False,
                     }
                 }
+            
+            elif self.auth_type == 'api_key' and self.api_key:
+                # Test API key by making a simple call
+                test_url = f"{self.url}/web/session/get_session_info"
+                test_response = requests.post(
+                    test_url,
+                    json={"jsonrpc": "2.0", "method": "call", "params": {}, "id": 3},
+                    headers={
+                        'Content-Type': 'application/json',
+                        'Authorization': f'Bearer {self.api_key}',
+                    },
+                    timeout=10
+                )
+                
+                if test_response.status_code == 200:
+                    self.connection_status = 'connected'
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': 'Success',
+                            'message': f'Connected to {self.url}\nOdoo {server_version}\nAPI Key validated',
+                            'type': 'success',
+                        }
+                    }
+                else:
+                    self.connection_status = 'failed'
+                    raise UserError("API key validation failed")
+            
+            else:
+                # No credentials, just test connectivity
+                self.connection_status = 'connected'
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': 'Partial Success',
+                        'message': f'Server reachable: {self.url}\nOdoo {server_version}\n\nNote: No credentials configured for authentication test.',
+                        'type': 'warning',
+                    }
+                }
+                
+        except requests.exceptions.Timeout:
+            self.connection_status = 'failed'
+            raise UserError(f"Connection timed out: {self.url}")
+        except requests.exceptions.ConnectionError as e:
+            self.connection_status = 'failed'
+            raise UserError(f"Cannot connect to server: {self.url}\n\nError: {str(e)}")
+        except UserError:
+            raise
         except Exception as e:
             self.connection_status = 'failed'
             raise UserError(f"Connection failed: {str(e)}")
-        
-        self.connection_status = 'failed'
-        raise UserError("Connection failed: Invalid response")
 
     def action_view_runs(self):
         """View test runs on this server"""
