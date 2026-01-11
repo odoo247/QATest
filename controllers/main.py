@@ -40,6 +40,159 @@ class QATestController(http.Controller):
             content_type='application/json'
         )
 
+    # ==================== Jenkins Test Download API ====================
+    
+    @http.route('/api/v1/qa/jenkins/tests', type='http', auth='public', methods=['GET'], csrf=False)
+    def api_jenkins_get_tests(self, **kwargs):
+        """
+        Get test cases for Jenkins execution
+        
+        GET /api/v1/qa/jenkins/tests?run_id=123
+        GET /api/v1/qa/jenkins/tests?test_ids=TC001,TC002,TC003
+        
+        Returns: JSON with robot code for each test
+        """
+        try:
+            run_id = kwargs.get('run_id')
+            test_ids = kwargs.get('test_ids', '')
+            
+            tests = []
+            
+            if run_id:
+                # Get tests from a specific run
+                run = request.env['qa.test.run'].sudo().browse(int(run_id))
+                if run.exists():
+                    for tc in run.test_case_ids:
+                        if tc.robot_code:
+                            tests.append({
+                                'id': tc.id,
+                                'test_id': tc.test_id,
+                                'name': tc.name,
+                                'robot_code': tc.robot_code,
+                            })
+            
+            elif test_ids:
+                # Get specific tests by ID
+                test_id_list = [t.strip() for t in test_ids.split(',') if t.strip()]
+                test_cases = request.env['qa.test.case'].sudo().search([
+                    ('test_id', 'in', test_id_list)
+                ])
+                for tc in test_cases:
+                    if tc.robot_code:
+                        tests.append({
+                            'id': tc.id,
+                            'test_id': tc.test_id,
+                            'name': tc.name,
+                            'robot_code': tc.robot_code,
+                        })
+            
+            return Response(
+                json.dumps({'tests': tests, 'count': len(tests)}),
+                content_type='application/json'
+            )
+            
+        except Exception as e:
+            _logger.error(f"Jenkins API error: {str(e)}")
+            return Response(
+                json.dumps({'error': str(e)}),
+                status=500,
+                content_type='application/json'
+            )
+    
+    @http.route('/api/v1/qa/jenkins/tests/robot', type='http', auth='public', methods=['GET'], csrf=False)
+    def api_jenkins_get_robot_file(self, **kwargs):
+        """
+        Get combined Robot Framework file for Jenkins
+        
+        GET /api/v1/qa/jenkins/tests/robot?run_id=123
+        
+        Returns: Combined .robot file content
+        """
+        try:
+            run_id = kwargs.get('run_id')
+            base_url = kwargs.get('base_url', 'http://localhost:8069')
+            
+            if not run_id:
+                return Response(
+                    json.dumps({'error': 'run_id is required'}),
+                    status=400,
+                    content_type='application/json'
+                )
+            
+            run = request.env['qa.test.run'].sudo().browse(int(run_id))
+            if not run.exists():
+                return Response(
+                    json.dumps({'error': 'Run not found'}),
+                    status=404,
+                    content_type='application/json'
+                )
+            
+            # Generate combined robot file
+            robot_content = self._generate_combined_robot(run, base_url)
+            
+            return Response(
+                robot_content,
+                headers={
+                    'Content-Type': 'text/plain',
+                    'Content-Disposition': f'attachment; filename=tests_run_{run_id}.robot'
+                }
+            )
+            
+        except Exception as e:
+            _logger.error(f"Jenkins API error: {str(e)}")
+            return Response(
+                json.dumps({'error': str(e)}),
+                status=500,
+                content_type='application/json'
+            )
+    
+    def _generate_combined_robot(self, run, base_url):
+        """Generate a combined robot file from all test cases in run"""
+        settings = """*** Settings ***
+Library    SeleniumLibrary
+Library    Collections
+Library    String
+
+Suite Setup       Open Browser    ${BASE_URL}/web/login    ${BROWSER}    options=${BROWSER_OPTIONS}
+Suite Teardown    Close All Browsers
+
+*** Variables ***
+${BASE_URL}           %s
+${BROWSER}            chrome
+${BROWSER_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage")
+${USERNAME}           admin
+${PASSWORD}           admin
+
+""" % base_url
+        
+        test_cases_content = "*** Test Cases ***\n"
+        
+        for tc in run.test_case_ids:
+            if tc.robot_code:
+                # Extract just the test case part from robot_code
+                code = tc.robot_code
+                
+                # If it contains *** Test Cases ***, extract only that section
+                if '*** Test Cases ***' in code:
+                    parts = code.split('*** Test Cases ***')
+                    if len(parts) > 1:
+                        # Get everything after *** Test Cases ***
+                        test_part = parts[1]
+                        # Stop at next section if any
+                        for section in ['*** Keywords ***', '*** Variables ***', '*** Settings ***']:
+                            if section in test_part:
+                                test_part = test_part.split(section)[0]
+                        test_cases_content += test_part.strip() + "\n\n"
+                else:
+                    # Assume it's just test case content
+                    test_cases_content += f"\n{tc.name}\n"
+                    test_cases_content += f"    [Documentation]    {tc.description or 'Auto-generated test'}\n"
+                    test_cases_content += f"    [Tags]    {tc.test_id}\n"
+                    # Add a basic log if no robot code structure
+                    test_cases_content += f"    Log    Running test: {tc.name}\n\n"
+        
+        return settings + test_cases_content
+
     # ==================== Customer API ====================
     
     @http.route('/api/v1/qa/customers', type='http', auth='public', methods=['GET'], csrf=False)

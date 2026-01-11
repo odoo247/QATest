@@ -459,9 +459,11 @@ class QATestRun(models.Model):
             })
             
             # Create individual test results if we have them
-            # This will trigger recomputation of total_tests, passed_tests, failed_tests
             if test_results.get('details'):
                 self._create_test_results_from_jenkins(test_results['details'])
+            elif test_results.get('total', 0) > 0:
+                # No details but we have totals - create summary results for test cases in run
+                self._create_summary_results_from_jenkins(test_results, odoo_state)
             
             _logger.info(f"Run {self.id} updated: {odoo_state} (passed: {test_results.get('passed', 0)}, failed: {test_results.get('failed', 0)})")
             
@@ -503,12 +505,49 @@ class QATestRun(models.Model):
         
         try:
             log = client.get_build_log(job_name, self.jenkins_build_number)
+            _logger.info(f"Parsing Jenkins log for build #{self.jenkins_build_number}")
             
+            # Get totals - look for "1 test, 1 passed, 0 failed"
             match = re.search(r'(\d+)\s+tests?,\s+(\d+)\s+passed,\s+(\d+)\s+failed', log)
             if match:
                 results['total'] = int(match.group(1))
                 results['passed'] = int(match.group(2))
                 results['failed'] = int(match.group(3))
+                _logger.info(f"Found totals: {results['total']} tests, {results['passed']} passed, {results['failed']} failed")
+            
+            # Pattern for "Test Name :: description    | PASS |" or "Test Name :: description    | FAIL | error"
+            # Extract just the test name (before ::)
+            pattern_with_desc = re.compile(r'^([^:|]+?)\s*::\s*[^|]+\s+\|\s+(PASS|FAIL)\s+\|(.*)$', re.MULTILINE)
+            for m in pattern_with_desc.finditer(log):
+                test_name = m.group(1).strip()
+                # Skip suite-level results
+                if test_name in ('Tests', 'Smoke Test', 'Tests.Smoke Test') or test_name.startswith('Tests.'):
+                    continue
+                results['details'].append({
+                    'name': test_name,
+                    'status': 'passed' if m.group(2) == 'PASS' else 'failed',
+                    'duration': 0,
+                    'message': m.group(3).strip() if m.group(2) == 'FAIL' else '',
+                })
+                _logger.info(f"Found test: {test_name} = {m.group(2)}")
+            
+            # Pattern for simple "Test Name    | PASS |" without description
+            if not results['details']:
+                pattern_simple = re.compile(r'^([^:|]+?)\s+\|\s+(PASS|FAIL)\s+\|(.*)$', re.MULTILINE)
+                for m in pattern_simple.finditer(log):
+                    test_name = m.group(1).strip()
+                    # Skip suite-level results (contain dots)
+                    if '.' in test_name or test_name in ('Tests', 'Smoke Test'):
+                        continue
+                    results['details'].append({
+                        'name': test_name,
+                        'status': 'passed' if m.group(2) == 'PASS' else 'failed',
+                        'duration': 0,
+                        'message': m.group(3).strip() if m.group(2) == 'FAIL' else '',
+                    })
+                    _logger.info(f"Found test (simple): {test_name} = {m.group(2)}")
+            
+            _logger.info(f"Parsed {len(results['details'])} test details from log")
                 
         except Exception as e:
             _logger.warning(f"Could not parse log: {e}")
@@ -517,14 +556,28 @@ class QATestRun(models.Model):
     
     def _create_test_results_from_jenkins(self, details):
         """Create qa.test.result records from Jenkins results"""
+        _logger.info(f"Creating test results from {len(details)} details")
+        
         for detail in details:
             test_case = None
+            detail_name = detail['name'].lower()
+            
+            # Try to find matching test case
             for tc in self.test_case_ids:
-                if tc.name == detail['name'] or detail['name'] in (tc.name or ''):
+                tc_name = (tc.name or '').lower()
+                # Check various matching conditions
+                if tc_name == detail_name:
+                    test_case = tc
+                    break
+                elif detail_name in tc_name:
+                    test_case = tc
+                    break
+                elif tc_name in detail_name:
                     test_case = tc
                     break
             
             if test_case:
+                _logger.info(f"Matched test '{detail['name']}' to test case '{test_case.name}'")
                 self.env['qa.test.result'].create({
                     'test_case_id': test_case.id,
                     'run_id': self.id,
@@ -540,10 +593,65 @@ class QATestRun(models.Model):
                     'last_run_duration': detail['duration'],
                     'last_error_message': detail['message'] if detail['status'] == 'failed' else False,
                 })
+            else:
+                # Create result without linking to specific test case
+                _logger.info(f"No matching test case for '{detail['name']}', creating unlinked result")
+                self.env['qa.test.result'].create({
+                    'run_id': self.id,
+                    'status': detail['status'],
+                    'duration': detail['duration'],
+                    'message': f"Test: {detail['name']}\n{detail['message']}",
+                    'log': f"Jenkins build #{self.jenkins_build_number}\nTest: {detail['name']}",
+                })
     
+    def _create_summary_results_from_jenkins(self, test_results, overall_status):
+        """Create summary test results when no individual details available"""
+        _logger.info(f"Creating summary results: {test_results}")
+        
+        # If we have test cases in this run, create a result for each
+        # based on overall status (since we can't match individual tests)
+        if self.test_case_ids:
+            for test_case in self.test_case_ids:
+                self.env['qa.test.result'].create({
+                    'test_case_id': test_case.id,
+                    'run_id': self.id,
+                    'status': overall_status,
+                    'duration': 0,
+                    'message': f"Jenkins build #{self.jenkins_build_number} - {test_results.get('passed', 0)} passed, {test_results.get('failed', 0)} failed",
+                    'log': f"Result from Jenkins build #{self.jenkins_build_number}\n"
+                           f"Total: {test_results.get('total', 0)}\n"
+                           f"Passed: {test_results.get('passed', 0)}\n"
+                           f"Failed: {test_results.get('failed', 0)}",
+                })
+                
+                test_case.write({
+                    'state': overall_status,
+                    'last_run_date': fields.Datetime.now(),
+                })
+        else:
+            # No test cases linked - create a generic result
+            _logger.info("No test cases linked to run, creating generic summary")
+
     def action_refresh_jenkins_status(self):
         """Manual button to refresh Jenkins status"""
         self.ensure_one()
-        if self.triggered_by == 'jenkins' and self.state == 'running':
-            self._check_jenkins_build()
-        return True
+        
+        if self.triggered_by != 'jenkins':
+            raise UserError('This test run was not triggered by Jenkins.')
+        
+        if not self.jenkins_build_number:
+            raise UserError('No Jenkins build number found.')
+        
+        # Allow checking status for any state (for debugging)
+        self._check_jenkins_build()
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Jenkins Status Refreshed',
+                'message': f'Run status: {self.state}, Results: {len(self.result_ids)}',
+                'sticky': False,
+                'type': 'success',
+            }
+        }

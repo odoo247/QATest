@@ -166,7 +166,7 @@
                             invisible="state != 'pending'"/>
                     <button name="action_refresh_jenkins_status" type="object" 
                             string="Refresh Jenkins Status" class="btn-secondary"
-                            invisible="triggered_by != 'jenkins' or state != 'running'"
+                            invisible="triggered_by != 'jenkins' or not jenkins_build_number"
                             icon="fa-refresh"/>
                     <button name="action_cancel" type="object" 
                             string="Cancel" class="btn-secondary"
