@@ -114,7 +114,14 @@ class QATestSuite(models.Model):
     @api.depends('run_ids')
     def _compute_last_run(self):
         for record in self:
-            last_run = record.run_ids.sorted('start_time', reverse=True)[:1]
+            # Filter runs that have start_time, then sort
+            runs_with_time = record.run_ids.filtered(lambda r: r.start_time)
+            if runs_with_time:
+                last_run = runs_with_time.sorted('start_time', reverse=True)[:1]
+            else:
+                # Fallback to most recent by ID if no start_time
+                last_run = record.run_ids.sorted('id', reverse=True)[:1]
+            
             record.last_run_id = last_run.id if last_run else False
             record.last_run_date = last_run.start_time if last_run else False
             record.last_run_status = last_run.state if last_run else False

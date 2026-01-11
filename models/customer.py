@@ -79,9 +79,18 @@ class QACustomer(models.Model):
     @api.depends('suite_ids.run_ids')
     def _compute_last_run(self):
         for record in self:
+            # Search for runs with start_time first
             runs = self.env['qa.test.run'].search([
-                ('suite_id', 'in', record.suite_ids.ids)
+                ('suite_id', 'in', record.suite_ids.ids),
+                ('start_time', '!=', False)
             ], order='start_time desc', limit=1)
+            
+            # Fallback to any run if none have start_time
+            if not runs:
+                runs = self.env['qa.test.run'].search([
+                    ('suite_id', 'in', record.suite_ids.ids)
+                ], order='id desc', limit=1)
+            
             if runs:
                 record.last_run_date = runs[0].start_time
                 record.last_run_status = runs[0].state
