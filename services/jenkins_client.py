@@ -379,26 +379,3 @@ class JenkinsClient:
         except Exception as e:
             _logger.error(f"Failed to get test report: {str(e)}")
             return None
-```
-
----
-
-## Important: Make Sure Jenkins Job Has Parameters
-
-The 500 error often happens when the job is **not configured to accept parameters**. 
-
-In your Jenkins job configuration, make sure you have:
-```
-☑ This project is parameterized
-
-Add Parameter → String Parameter:
-  Name: TEST_CASES
-  Default: (empty)
-  
-Add Parameter → String Parameter:
-  Name: BASE_URL
-  Default: (empty)
-  
-Add Parameter → String Parameter:
-  Name: RUN_ID
-  Default: (empty)
