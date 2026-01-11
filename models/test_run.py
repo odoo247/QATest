@@ -353,7 +353,7 @@ class QATestRun(models.Model):
         if not config.notify_on_complete:
             return
         
-        if config.notify_on_failure_only and self.state == 'passed':
+        if config.notify_on_failure and self.state == 'passed':
             return
         
         if config.notification_email:
