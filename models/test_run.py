@@ -241,40 +241,61 @@ class QATestRun(models.Model):
         """Execute tests via Jenkins"""
         self.ensure_one()
         
-        config = self.config_id or self.env['qa.test.ai.config'].get_active_config()
+        config = self.config_id or self.env['qa.test.ai.config'].search([('active', '=', True)], limit=1)
+        
+        if not config:
+            raise UserError('No AI configuration found. Please configure settings first.')
+        
         if not config.jenkins_enabled:
-            raise UserError('Jenkins integration is not enabled.')
+            raise UserError('Jenkins integration is not enabled.\n\n'
+                          'Please go to QA Test Generator > Configuration > AI Settings\n'
+                          'and enable Jenkins integration with proper URL, credentials, and job name.')
         
-        from ..services.jenkins_client import JenkinsClient
-        client = JenkinsClient(config)
+        if not config.jenkins_url or not config.jenkins_job_name:
+            raise UserError('Jenkins is enabled but not properly configured.\n\n'
+                          'Please configure Jenkins URL and Job Name in AI Settings.')
         
-        # Trigger Jenkins build
-        build_number = client.trigger_build(
-            job_name=config.jenkins_job_name,
-            parameters={
-                'TEST_CASES': ','.join(self.test_case_ids.mapped('test_id')),
-                'BASE_URL': self.base_url,
-                'RUN_ID': self.id,
+        try:
+            from ..services.jenkins_client import JenkinsClient
+            client = JenkinsClient(config)
+            
+            # Trigger Jenkins build
+            build_number = client.trigger_build(
+                job_name=config.jenkins_job_name,
+                parameters={
+                    'TEST_CASES': ','.join(self.test_case_ids.mapped('test_id')),
+                    'BASE_URL': self.target_url or self.base_url or '',
+                    'RUN_ID': str(self.id),
+                }
+            )
+            
+            self.write({
+                'state': 'running',
+                'triggered_by': 'jenkins',
+                'jenkins_build_number': build_number,
+                'jenkins_build_url': f"{config.jenkins_url}/job/{config.jenkins_job_name}/{build_number}",
+                'start_time': fields.Datetime.now(),
+            })
+            
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Jenkins Build Triggered',
+                    'message': f'Build #{build_number} started.',
+                    'type': 'success',
+                }
             }
-        )
-        
-        self.write({
-            'state': 'running',
-            'triggered_by': 'jenkins',
-            'jenkins_build_number': build_number,
-            'jenkins_build_url': f"{config.jenkins_url}/job/{config.jenkins_job_name}/{build_number}",
-            'start_time': fields.Datetime.now(),
-        })
-        
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': 'Jenkins Build Triggered',
-                'message': f'Build #{build_number} started.',
-                'type': 'success',
-            }
-        }
+        except Exception as e:
+            error_msg = str(e)
+            if '404' in error_msg:
+                raise UserError(f'Jenkins job not found: {config.jenkins_job_name}\n\n'
+                              f'Please verify the job exists in Jenkins at:\n{config.jenkins_url}')
+            elif '401' in error_msg or '403' in error_msg:
+                raise UserError('Jenkins authentication failed.\n\n'
+                              'Please verify your Jenkins credentials in AI Settings.')
+            else:
+                raise UserError(f'Jenkins error: {error_msg}')
 
     def action_cancel(self):
         """Cancel the test run"""

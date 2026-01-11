@@ -277,8 +277,16 @@ class QATestCase(models.Model):
         
         try:
             from ..services.test_executor import TestExecutor
-            config = self.env['qa.test.ai.config'].get_active_config()
-            executor = TestExecutor(config)
+            
+            # Get config
+            config = self.env['qa.test.ai.config'].search([('active', '=', True)], limit=1)
+            
+            # Get run info for server/target_url
+            run = self.env['qa.test.run'].browse(run_id)
+            server = run.server_id if run else None
+            target_url = run.target_url if run else None
+            
+            executor = TestExecutor(config, server=server, target_url=target_url)
             
             result = executor.execute_test(self)
             

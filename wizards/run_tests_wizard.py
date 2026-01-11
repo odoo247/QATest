@@ -105,6 +105,15 @@ class QATestRunWizard(models.TransientModel):
         if not self.base_url:
             raise UserError('Server URL is not configured. Please check server settings.')
         
+        # Validate Jenkins configuration if Jenkins mode selected
+        if self.execution_mode == 'jenkins':
+            config = self.config_id or self.env['qa.test.ai.config'].search([('active', '=', True)], limit=1)
+            if not config or not config.jenkins_enabled:
+                raise UserError('Jenkins execution mode selected but Jenkins is not enabled.\n\n'
+                              'Please either:\n'
+                              '1. Select "Run Locally" execution mode, or\n'
+                              '2. Enable and configure Jenkins in QA Test Generator > Configuration > AI Settings')
+        
         # Filter test cases by tags if specified
         test_cases = self._filter_tests_by_tags()
         
