@@ -104,11 +104,11 @@ class QATestCase(models.Model):
     last_run_date = fields.Datetime(string='Last Run Date', readonly=True)
     last_run_duration = fields.Float(string='Last Duration (s)', readonly=True)
     last_run_result_id = fields.Many2one('qa.test.result', string='Last Result',
-                                         compute='_compute_last_run')
+                                         compute='_compute_last_run_result_id')
     last_result = fields.Selection([
         ('passed', 'Passed'),
         ('failed', 'Failed'),
-    ], string='Last Result Status', compute='_compute_last_run', store=True)
+    ], string='Last Result Status', compute='_compute_last_result', store=True)
     last_error_message = fields.Text(string='Last Error', readonly=True)
     last_screenshot = fields.Binary(string='Last Screenshot', readonly=True)
     last_screenshot_name = fields.Char(string='Screenshot Name')
@@ -147,11 +147,18 @@ class QATestCase(models.Model):
             else:
                 record.robot_code_preview = '<p>No code generated yet.</p>'
 
-    @api.depends('result_ids', 'result_ids.status')
-    def _compute_last_run(self):
+    @api.depends('result_ids')
+    def _compute_last_run_result_id(self):
+        """Compute last run result (non-stored)"""
         for record in self:
             last_result = record.result_ids.sorted('execution_date', reverse=True)[:1]
             record.last_run_result_id = last_result.id if last_result else False
+
+    @api.depends('result_ids', 'result_ids.status')
+    def _compute_last_result(self):
+        """Compute last result status (stored)"""
+        for record in self:
+            last_result = record.result_ids.sorted('execution_date', reverse=True)[:1]
             if last_result and last_result.status in ('passed', 'failed'):
                 record.last_result = last_result.status
             else:
