@@ -51,9 +51,12 @@ class QACustomer(models.Model):
     suite_count = fields.Integer(compute='_compute_counts')
     last_run_date = fields.Datetime(compute='_compute_last_run', store=True)
     last_run_status = fields.Selection([
+        ('pending', 'Pending'),
+        ('running', 'Running'),
         ('passed', 'Passed'),
         ('failed', 'Failed'),
         ('error', 'Error'),
+        ('cancelled', 'Cancelled'),
     ], compute='_compute_last_run', store=True)
     pass_rate = fields.Float(compute='_compute_pass_rate', store=True)
     
