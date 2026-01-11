@@ -78,7 +78,7 @@ class QATestSuite(models.Model):
         ('failed', 'Failed'),
         ('error', 'Error'),
         ('cancelled', 'Cancelled'),
-    ], string='Last Run Status', compute='_compute_last_run', store=True)
+    ], string='Last Run Status', compute='_compute_last_run')
     pass_rate = fields.Float(string='Pass Rate (%)', compute='_compute_last_run')
     
     # Schedule
