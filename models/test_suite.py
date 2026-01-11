@@ -125,6 +125,15 @@ class QATestSuite(models.Model):
         if not self.test_case_ids:
             raise UserError('No test cases in this suite. Generate tests first.')
         
+        # Get default server for customer
+        default_server_id = False
+        if self.customer_id and self.customer_id.server_ids:
+            # Prefer staging/uat servers
+            servers = self.customer_id.server_ids.sorted(
+                lambda s: {'staging': 0, 'uat': 1, 'development': 2, 'production': 3}.get(s.environment, 4)
+            )
+            default_server_id = servers[0].id if servers else False
+        
         return {
             'name': 'Run Test Suite',
             'type': 'ir.actions.act_window',
@@ -132,6 +141,8 @@ class QATestSuite(models.Model):
             'view_mode': 'form',
             'target': 'new',
             'context': {
+                'default_customer_id': self.customer_id.id if self.customer_id else False,
+                'default_server_id': default_server_id,
                 'default_suite_id': self.id,
                 'default_test_case_ids': [(6, 0, self.test_case_ids.ids)],
             }

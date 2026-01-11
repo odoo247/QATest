@@ -49,7 +49,8 @@ class QATestCase(models.Model):
     spec_id = fields.Many2one('qa.test.spec', string='Source Specification', 
                               ondelete='cascade')
     suite_id = fields.Many2one('qa.test.suite', string='Test Suite',
-                               related='spec_id.suite_id')
+                               ondelete='set null',
+                               help='Test suite this test belongs to')
     
     # Code-First Generation
     code_scan_id = fields.Many2one('qa.code.scan', string='Code Scan',

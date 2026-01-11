@@ -8,26 +8,37 @@
             <form string="Run Tests">
                 <sheet>
                     <group>
-                        <group string="Run Details">
-                            <field name="name"/>
-                            <field name="suite_id"/>
-                            <field name="config_id"/>
+                        <group string="Customer &amp; Server">
+                            <field name="customer_id" options="{'no_create': True}"/>
+                            <field name="server_id" options="{'no_create': True}"
+                                   placeholder="Select target server..."/>
+                            <field name="environment" readonly="1" 
+                                   invisible="not server_id"/>
                         </group>
-                        <group string="Environment">
-                            <field name="environment"/>
-                            <field name="base_url"/>
-                            <field name="execution_mode"/>
+                        <group string="Target">
+                            <field name="base_url" readonly="1"/>
+                            <field name="database" readonly="1" invisible="not database"/>
                         </group>
                     </group>
                     <group>
+                        <group string="Run Details">
+                            <field name="name"/>
+                            <field name="suite_id" options="{'no_create': True}"/>
+                            <field name="execution_mode"/>
+                        </group>
                         <group string="Options">
                             <field name="headless"/>
                             <field name="parallel"/>
                             <field name="fail_fast"/>
                         </group>
+                    </group>
+                    <group>
                         <group string="Tag Filters">
                             <field name="include_tags" placeholder="smoke, critical"/>
                             <field name="exclude_tags" placeholder="slow, manual"/>
+                        </group>
+                        <group string="Configuration">
+                            <field name="config_id" groups="base.group_no_one"/>
                         </group>
                     </group>
                     <notebook>

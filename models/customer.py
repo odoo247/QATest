@@ -140,16 +140,34 @@ class QACustomer(models.Model):
         if not self.suite_ids:
             raise UserError("No test suites defined for this customer")
         
+        # Get all test cases from all suites
+        all_test_cases = self.env['qa.test.case'].search([
+            ('customer_id', '=', self.id),
+            ('state', '=', 'ready'),
+        ])
+        
+        if not all_test_cases:
+            raise UserError("No ready test cases found for this customer")
+        
+        # Get default server (prefer staging/uat)
+        default_server_id = False
+        if self.server_ids:
+            servers = self.server_ids.sorted(
+                lambda s: {'staging': 0, 'uat': 1, 'development': 2, 'production': 3}.get(s.environment, 4)
+            )
+            default_server_id = servers[0].id if servers else False
+        
         # Open wizard to select server and run
         return {
             'type': 'ir.actions.act_window',
             'name': 'Run Tests',
-            'res_model': 'qa.run.tests.wizard',
+            'res_model': 'qa.test.run.wizard',
             'view_mode': 'form',
             'target': 'new',
             'context': {
                 'default_customer_id': self.id,
-                'default_suite_ids': [(6, 0, self.suite_ids.ids)],
+                'default_server_id': default_server_id,
+                'default_test_case_ids': [(6, 0, all_test_cases.ids)],
             },
         }
 

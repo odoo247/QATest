@@ -29,15 +29,23 @@ class QATestRun(models.Model):
     suite_id = fields.Many2one('qa.test.suite', string='Test Suite')
     test_case_ids = fields.Many2many('qa.test.case', string='Test Cases')
     
-    # Environment
+    # Configuration
     config_id = fields.Many2one('qa.test.ai.config', string='Configuration',
-                                default=lambda self: self.env['qa.test.ai.config'].search([], limit=1))
+                                default=lambda self: self.env['qa.test.ai.config'].search([('active', '=', True)], limit=1))
+    
+    # Target server info (from customer server)
+    target_url = fields.Char(string='Target URL', help='URL of the Odoo instance to test')
+    target_database = fields.Char(string='Target Database', help='Database name')
+    
+    # Legacy/fallback
     environment = fields.Selection([
         ('local', 'Local'),
+        ('development', 'Development'),
         ('staging', 'Staging'),
+        ('uat', 'UAT'),
         ('production', 'Production'),
-    ], string='Environment', default='local')
-    base_url = fields.Char(string='Base URL', related='config_id.test_base_url')
+    ], string='Environment', compute='_compute_environment', store=True)
+    base_url = fields.Char(string='Base URL', compute='_compute_base_url')
     
     # Trigger
     triggered_by = fields.Selection([
@@ -91,6 +99,26 @@ class QATestRun(models.Model):
 
     def _default_name(self):
         return f"Test Run {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+
+    @api.depends('server_id', 'server_id.environment')
+    def _compute_environment(self):
+        for run in self:
+            if run.server_id:
+                run.environment = run.server_id.environment
+            else:
+                run.environment = 'local'
+
+    @api.depends('target_url', 'server_id')
+    def _compute_base_url(self):
+        for run in self:
+            if run.target_url:
+                run.base_url = run.target_url
+            elif run.server_id:
+                run.base_url = run.server_id.url
+            elif run.config_id:
+                run.base_url = run.config_id.test_base_url
+            else:
+                run.base_url = False
 
     @api.depends('start_time', 'end_time')
     def _compute_duration(self):
@@ -146,7 +174,13 @@ class QATestRun(models.Model):
         
         self._log("=" * 50)
         self._log(f"Starting Test Run: {self.name}")
-        self._log(f"Environment: {self.base_url}")
+        if self.customer_id:
+            self._log(f"Customer: {self.customer_id.name}")
+        if self.server_id:
+            self._log(f"Server: {self.server_id.name} ({self.server_id.environment})")
+        self._log(f"Target URL: {self.target_url or self.base_url or 'Not configured'}")
+        if self.target_database:
+            self._log(f"Database: {self.target_database}")
         self._log(f"Test Cases: {len(self.test_case_ids)}")
         self._log("=" * 50)
         
