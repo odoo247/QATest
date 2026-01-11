@@ -276,7 +276,16 @@ class JenkinsClient:
         return 0
     
     def get_build_status(self, job_name: str = None, build_number: int = None) -> Dict:
-        """Get build status"""
+        """
+        Get build status
+        
+        Args:
+            job_name: Jenkins job name
+            build_number: Build number (default: last build)
+        
+        Returns:
+            Build status dictionary
+        """
         import requests
         from requests.auth import HTTPBasicAuth
         
@@ -298,7 +307,7 @@ class JenkinsClient:
             
             return {
                 'number': data.get('number'),
-                'result': data.get('result'),
+                'result': data.get('result'),  # SUCCESS, FAILURE, UNSTABLE, null (building)
                 'building': data.get('building', False),
                 'duration': data.get('duration', 0),
                 'url': data.get('url'),
@@ -336,7 +345,17 @@ class JenkinsClient:
     
     def wait_for_build(self, job_name: str = None, build_number: int = None, 
                        timeout: int = 300) -> Dict:
-        """Wait for build to complete"""
+        """
+        Wait for build to complete
+        
+        Args:
+            job_name: Jenkins job name
+            build_number: Build number
+            timeout: Maximum wait time in seconds
+        
+        Returns:
+            Final build status
+        """
         job_name = job_name or self.job_name
         
         start_time = time.time()
@@ -372,7 +391,7 @@ class JenkinsClient:
             )
             
             if response.status_code == 404:
-                return None
+                return None  # No robot report
             
             return response.json()
             

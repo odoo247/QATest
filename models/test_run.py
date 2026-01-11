@@ -389,3 +389,161 @@ class QATestRun(models.Model):
         if vals.get('auto_execute'):
             run.action_execute()
         return run
+
+    # ==========================================
+    # Jenkins Polling Methods
+    # ==========================================
+    
+    @api.model
+    def _cron_check_jenkins_status(self):
+        """Cron job to check Jenkins build status and fetch results"""
+        _logger.info("Checking Jenkins build status...")
+        
+        running_runs = self.search([
+            ('state', '=', 'running'),
+            ('triggered_by', '=', 'jenkins'),
+            ('jenkins_build_number', '!=', False),
+        ])
+        
+        _logger.info(f"Found {len(running_runs)} running Jenkins builds")
+        
+        for run in running_runs:
+            try:
+                run._check_jenkins_build()
+            except Exception as e:
+                _logger.error(f"Error checking Jenkins build for run {run.id}: {e}")
+    
+    def _check_jenkins_build(self):
+        """Check Jenkins build status and fetch results if complete"""
+        self.ensure_one()
+        
+        config = self.config_id or self.env['qa.test.ai.config'].search([('active', '=', True)], limit=1)
+        if not config or not config.jenkins_enabled:
+            _logger.warning(f"Jenkins not configured for run {self.id}")
+            return
+        
+        from ..services.jenkins_client import JenkinsClient
+        client = JenkinsClient(config)
+        
+        try:
+            status = client.get_build_status(
+                job_name=config.jenkins_job_name,
+                build_number=self.jenkins_build_number
+            )
+            
+            _logger.info(f"Jenkins build #{self.jenkins_build_number} status: {status}")
+            
+            if status.get('building'):
+                _logger.info(f"Build #{self.jenkins_build_number} still running...")
+                return
+            
+            jenkins_result = status.get('result', 'FAILURE')
+            result_map = {
+                'SUCCESS': 'passed',
+                'FAILURE': 'failed',
+                'UNSTABLE': 'failed',
+                'ABORTED': 'cancelled',
+                'NOT_BUILT': 'error',
+            }
+            
+            odoo_state = result_map.get(jenkins_result, 'error')
+            duration = status.get('duration', 0) / 1000
+            
+            test_results = self._fetch_jenkins_robot_results(client, config.jenkins_job_name)
+            
+            # Update run state and timing
+            self.write({
+                'state': odoo_state,
+                'end_time': fields.Datetime.now(),
+                'duration': duration,
+            })
+            
+            # Create individual test results if we have them
+            # This will trigger recomputation of total_tests, passed_tests, failed_tests
+            if test_results.get('details'):
+                self._create_test_results_from_jenkins(test_results['details'])
+            
+            _logger.info(f"Run {self.id} updated: {odoo_state} (passed: {test_results.get('passed', 0)}, failed: {test_results.get('failed', 0)})")
+            
+        except Exception as e:
+            _logger.error(f"Failed to check Jenkins build: {e}")
+    
+    def _fetch_jenkins_robot_results(self, client, job_name):
+        """Fetch Robot Framework results from Jenkins"""
+        results = {'total': 0, 'passed': 0, 'failed': 0, 'details': []}
+        
+        try:
+            robot_report = client.get_test_report(job_name, self.jenkins_build_number)
+            
+            if robot_report:
+                results['total'] = robot_report.get('overallTotal', 0)
+                results['passed'] = robot_report.get('overallPassed', 0)
+                results['failed'] = robot_report.get('overallFailed', 0)
+                
+                for suite in robot_report.get('suites', []):
+                    for case in suite.get('cases', []):
+                        results['details'].append({
+                            'name': case.get('name'),
+                            'status': 'passed' if case.get('status') == 'PASS' else 'failed',
+                            'duration': case.get('duration', 0) / 1000,
+                            'message': case.get('errorMsg', ''),
+                        })
+            else:
+                results = self._parse_results_from_log(client, job_name)
+                
+        except Exception as e:
+            _logger.warning(f"Could not fetch Robot results: {e}")
+        
+        return results
+    
+    def _parse_results_from_log(self, client, job_name):
+        """Parse test results from Jenkins console log"""
+        import re
+        results = {'total': 0, 'passed': 0, 'failed': 0, 'details': []}
+        
+        try:
+            log = client.get_build_log(job_name, self.jenkins_build_number)
+            
+            match = re.search(r'(\d+)\s+tests?,\s+(\d+)\s+passed,\s+(\d+)\s+failed', log)
+            if match:
+                results['total'] = int(match.group(1))
+                results['passed'] = int(match.group(2))
+                results['failed'] = int(match.group(3))
+                
+        except Exception as e:
+            _logger.warning(f"Could not parse log: {e}")
+        
+        return results
+    
+    def _create_test_results_from_jenkins(self, details):
+        """Create qa.test.result records from Jenkins results"""
+        for detail in details:
+            test_case = None
+            for tc in self.test_case_ids:
+                if tc.name == detail['name'] or detail['name'] in (tc.name or ''):
+                    test_case = tc
+                    break
+            
+            if test_case:
+                self.env['qa.test.result'].create({
+                    'test_case_id': test_case.id,
+                    'run_id': self.id,
+                    'status': detail['status'],
+                    'duration': detail['duration'],
+                    'message': detail['message'],
+                    'log': f"Jenkins build #{self.jenkins_build_number}",
+                })
+                
+                test_case.write({
+                    'state': detail['status'],
+                    'last_run_date': fields.Datetime.now(),
+                    'last_run_duration': detail['duration'],
+                    'last_error_message': detail['message'] if detail['status'] == 'failed' else False,
+                })
+    
+    def action_refresh_jenkins_status(self):
+        """Manual button to refresh Jenkins status"""
+        self.ensure_one()
+        if self.triggered_by == 'jenkins' and self.state == 'running':
+            self._check_jenkins_build()
+        return True
