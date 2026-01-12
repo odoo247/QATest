@@ -259,6 +259,16 @@ class QATestRun(models.Model):
             from ..services.jenkins_client import JenkinsClient
             client = JenkinsClient(config)
             
+            # Update state BEFORE triggering Jenkins so the run exists when Jenkins calls back
+            self.write({
+                'state': 'running',
+                'triggered_by': 'jenkins',
+                'start_time': fields.Datetime.now(),
+            })
+            
+            # Force commit so the record is visible to Jenkins API call
+            self.env.cr.commit()
+            
             # Trigger Jenkins build
             build_number = client.trigger_build(
                 job_name=config.jenkins_job_name,
@@ -269,12 +279,10 @@ class QATestRun(models.Model):
                 }
             )
             
+            # Update with build number
             self.write({
-                'state': 'running',
-                'triggered_by': 'jenkins',
                 'jenkins_build_number': build_number,
                 'jenkins_build_url': f"{config.jenkins_url}/job/{config.jenkins_job_name}/{build_number}",
-                'start_time': fields.Datetime.now(),
             })
             
             return {
@@ -287,6 +295,9 @@ class QATestRun(models.Model):
                 }
             }
         except Exception as e:
+            # Revert state on error
+            self.write({'state': 'pending', 'triggered_by': False})
+            
             error_msg = str(e)
             if '404' in error_msg:
                 raise UserError(f'Jenkins job not found: {config.jenkins_job_name}\n\n'

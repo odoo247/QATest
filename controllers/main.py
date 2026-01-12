@@ -9,6 +9,7 @@ import zipfile
 import io
 import tempfile
 import os
+from datetime import datetime
 
 _logger = logging.getLogger(__name__)
 
@@ -112,6 +113,8 @@ class QATestController(http.Controller):
             run_id = kwargs.get('run_id')
             base_url = kwargs.get('base_url', 'http://localhost:8069')
             
+            _logger.info(f"Jenkins API: Fetching tests for run_id={run_id}, base_url={base_url}")
+            
             if not run_id:
                 return Response(
                     json.dumps({'error': 'run_id is required'}),
@@ -119,16 +122,30 @@ class QATestController(http.Controller):
                     content_type='application/json'
                 )
             
+            # Search for the run to handle both browse and search cases
             run = request.env['qa.test.run'].sudo().browse(int(run_id))
+            
+            _logger.info(f"Jenkins API: Looking up run {run_id}, exists={run.exists()}")
+            
             if not run.exists():
+                # Try searching as a fallback
+                run = request.env['qa.test.run'].sudo().search([('id', '=', int(run_id))], limit=1)
+                _logger.info(f"Jenkins API: Search fallback for run {run_id}, found={bool(run)}")
+            
+            if not run.exists():
+                _logger.warning(f"Jenkins API: Run {run_id} not found in database")
                 return Response(
                     json.dumps({'error': 'Run not found'}),
                     status=404,
                     content_type='application/json'
                 )
             
+            _logger.info(f"Jenkins API: Found run {run_id}, test_cases={len(run.test_case_ids)}")
+            
             # Generate combined robot file
             robot_content = self._generate_combined_robot(run, base_url)
+            
+            _logger.info(f"Jenkins API: Generated robot file, size={len(robot_content)} bytes")
             
             return Response(
                 robot_content,
@@ -139,7 +156,7 @@ class QATestController(http.Controller):
             )
             
         except Exception as e:
-            _logger.error(f"Jenkins API error: {str(e)}")
+            _logger.error(f"Jenkins API error: {str(e)}", exc_info=True)
             return Response(
                 json.dumps({'error': str(e)}),
                 status=500,
@@ -148,22 +165,32 @@ class QATestController(http.Controller):
     
     def _generate_combined_robot(self, run, base_url):
         """Generate a combined robot file from all test cases in run"""
+        
+        # Get target server credentials
+        server = run.server_id
+        db_name = server.database if server else 'odoo'
+        username = server.username if server else 'admin'
+        password = server.password if server else 'admin'
+        
         settings = """*** Settings ***
 Library    SeleniumLibrary
 Library    Collections
 Library    String
+Library    OdooLibrary    ${BASE_URL}    ${DATABASE}    ${USERNAME}    ${PASSWORD}
 
-Suite Setup       Open Browser    ${BASE_URL}/web/login    ${BROWSER}    options=${BROWSER_OPTIONS}
-Suite Teardown    Close All Browsers
+Suite Setup       Connect To Odoo
+Suite Teardown    Disconnect From Odoo
 
 *** Variables ***
 ${BASE_URL}           %s
+${DATABASE}           %s
+${USERNAME}           %s
+${PASSWORD}           %s
 ${BROWSER}            chrome
 ${BROWSER_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage")
-${USERNAME}           admin
-${PASSWORD}           admin
+${CURDATE}            %s
 
-""" % base_url
+""" % (base_url, db_name, username, password, datetime.now().strftime('%Y-%m-%d'))
         
         test_cases_content = "*** Test Cases ***\n"
         
