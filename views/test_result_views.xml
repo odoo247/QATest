@@ -8,21 +8,25 @@
             <form string="Test Result">
                 <header>
                     <button name="action_rerun_test" type="object" 
-                            string="Re-run Test" class="btn-primary"/>
+                            string="Re-run Test" class="btn-primary"
+                            invisible="not test_case_id"/>
                     <button name="action_view_test_case" type="object" 
-                            string="View Test Case" class="btn-secondary"/>
+                            string="View Test Case" class="btn-secondary"
+                            invisible="not test_case_id"/>
+                    <button name="action_link_test_case" type="object"
+                            string="Link to Test Case" class="btn-secondary"
+                            invisible="test_case_id"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
                         <h1>
                             <field name="status_icon" readonly="1" class="oe_inline"/>
-                            <field name="name" readonly="1"/>
+                            <field name="display_test_name" readonly="1"/>
                         </h1>
                     </div>
                     <group>
                         <group>
-                            <field name="display_test_name" string="Test" readonly="1"/>
-                            <field name="test_case_id" readonly="1" invisible="not test_case_id"/>
+                            <field name="test_case_id" readonly="1"/>
                             <field name="run_id" readonly="1"/>
                             <field name="status" widget="badge"
                                    decoration-success="status == 'passed'"
@@ -115,6 +119,28 @@
                     <filter string="Date" name="group_date" context="{'group_by': 'execution_date:day'}"/>
                 </group>
             </search>
+        </field>
+    </record>
+    
+    <!-- Link Test Case Form View -->
+    <record id="view_qa_test_result_link_form" model="ir.ui.view">
+        <field name="name">qa.test.result.link.form</field>
+        <field name="model">qa.test.result</field>
+        <field name="arch" type="xml">
+            <form string="Link to Test Case">
+                <sheet>
+                    <group>
+                        <field name="display_test_name" string="Test Name" readonly="1"/>
+                        <field name="test_case_id" string="Link to Test Case"
+                               options="{'no_create': True}"
+                               domain="[]"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Save" type="object" name="write" class="btn-primary" close="1"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
         </field>
     </record>
     

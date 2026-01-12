@@ -86,11 +86,15 @@ class QATestResult(models.Model):
 
     @api.depends('test_case_id', 'test_case_id.name', 'test_name')
     def _compute_display_test_name(self):
+        import re
         for result in self:
             if result.test_case_id:
                 result.display_test_name = result.test_case_id.name
             elif result.test_name:
-                result.display_test_name = result.test_name
+                # Clean up any leading/trailing dashes or separators
+                clean_name = re.sub(r'^[\s\-=_\.]+', '', result.test_name)
+                clean_name = re.sub(r'[\s\-=_\.]+$', '', clean_name)
+                result.display_test_name = clean_name.strip() or result.test_name
             else:
                 result.display_test_name = 'Unknown Test'
 
@@ -200,6 +204,19 @@ class QATestResult(models.Model):
             'res_model': 'qa.test.case',
             'view_mode': 'form',
             'res_id': self.test_case_id.id,
+        }
+
+    def action_link_test_case(self):
+        """Open dialog to link this result to a test case"""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Link to Test Case',
+            'res_model': 'qa.test.result',
+            'view_mode': 'form',
+            'res_id': self.id,
+            'view_id': self.env.ref('qa_test_generator.view_qa_test_result_link_form').id,
+            'target': 'new',
         }
 
 

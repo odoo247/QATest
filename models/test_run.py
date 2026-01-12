@@ -554,6 +554,14 @@ class QATestRun(models.Model):
                         status_str = match.group(2).upper()
                         message = match.group(3).strip() if len(match.groups()) > 2 else ''
                         
+                        # Clean up test name - remove leading/trailing dashes, equals, spaces
+                        test_name = re.sub(r'^[\s\-=_\.]+', '', test_name)  # Leading
+                        test_name = re.sub(r'[\s\-=_\.]+$', '', test_name)  # Trailing
+                        test_name = test_name.strip()
+                        
+                        if not test_name:
+                            continue
+                        
                         # Skip suite-level and internal results
                         skip_names = ['tests', 'smoke test', 'tests.smoke test', 'test suites', 
                                      'output', 'log', 'report', 'downloaded tests']
@@ -569,7 +577,7 @@ class QATestRun(models.Model):
                             'name': test_name,
                             'status': 'passed' if status_str == 'PASS' else 'failed',
                             'duration': 0,
-                            'message': message.strip('| \t'),
+                            'message': message.strip('| \t-'),
                         })
                         _logger.info(f"Found test: '{test_name}' = {status_str}, msg='{message[:50] if message else ''}'")
                         break
@@ -587,30 +595,78 @@ class QATestRun(models.Model):
     
     def _create_test_results_from_jenkins(self, details):
         """Create qa.test.result records from Jenkins results"""
+        import re
         _logger.info(f"Creating test results from {len(details)} details")
+        
+        def normalize_name(name):
+            """Normalize test name for comparison"""
+            if not name:
+                return ''
+            # Remove common prefixes like "TC001 - " or "Test_"
+            name = re.sub(r'^(TC\d+\s*[-:]\s*|Test[_\s]*)', '', name, flags=re.IGNORECASE)
+            # Remove special characters and extra spaces
+            name = re.sub(r'[^a-zA-Z0-9\s]', ' ', name)
+            # Normalize spaces and lowercase
+            return ' '.join(name.lower().split())
+        
+        def get_words(name):
+            """Get significant words from name"""
+            words = normalize_name(name).split()
+            # Filter out common words
+            stop_words = {'test', 'the', 'a', 'an', 'and', 'or', 'with', 'without', 'for', 'on', 'in'}
+            return [w for w in words if w not in stop_words and len(w) > 2]
+        
+        def match_score(name1, name2):
+            """Calculate match score between two names"""
+            words1 = set(get_words(name1))
+            words2 = set(get_words(name2))
+            if not words1 or not words2:
+                return 0
+            # Jaccard similarity
+            intersection = len(words1 & words2)
+            union = len(words1 | words2)
+            return intersection / union if union > 0 else 0
         
         for detail in details:
             test_case = None
-            detail_name = detail['name'].lower()
+            detail_name = detail['name']
+            best_score = 0
+            best_match = None
+            
+            _logger.info(f"Trying to match Jenkins test: '{detail_name}'")
             
             # Try to find matching test case
             for tc in self.test_case_ids:
-                tc_name = (tc.name or '').lower()
-                # Check various matching conditions
-                if tc_name == detail_name:
+                tc_name = tc.name or ''
+                
+                # Exact match (case insensitive)
+                if tc_name.lower() == detail_name.lower():
                     test_case = tc
+                    _logger.info(f"  Exact match: '{tc_name}'")
                     break
-                elif detail_name in tc_name:
+                
+                # Normalized exact match
+                if normalize_name(tc_name) == normalize_name(detail_name):
                     test_case = tc
+                    _logger.info(f"  Normalized match: '{tc_name}'")
                     break
-                elif tc_name in detail_name:
-                    test_case = tc
-                    break
+                
+                # Score-based matching
+                score = match_score(tc_name, detail_name)
+                if score > best_score:
+                    best_score = score
+                    best_match = tc
+            
+            # Use best match if score is high enough (>= 50% word overlap)
+            if not test_case and best_score >= 0.5:
+                test_case = best_match
+                _logger.info(f"  Fuzzy match ({best_score:.0%}): '{best_match.name}'")
             
             if test_case:
-                _logger.info(f"Matched test '{detail['name']}' to test case '{test_case.name}'")
+                _logger.info(f"Matched test '{detail_name}' to test case '{test_case.name}'")
                 self.env['qa.test.result'].create({
                     'test_case_id': test_case.id,
+                    'test_name': detail['name'],  # Keep original name for display
                     'run_id': self.id,
                     'status': detail['status'],
                     'duration': detail['duration'],
@@ -626,7 +682,7 @@ class QATestRun(models.Model):
                 })
             else:
                 # Create result without linking to specific test case
-                _logger.info(f"No matching test case for '{detail['name']}', creating unlinked result")
+                _logger.info(f"No matching test case for '{detail['name']}' (best score: {best_score:.0%})")
                 self.env['qa.test.result'].create({
                     'run_id': self.id,
                     'test_name': detail['name'],
