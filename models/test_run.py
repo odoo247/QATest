@@ -416,7 +416,7 @@ class QATestRun(models.Model):
                 _logger.error(f"Error checking Jenkins build for run {run.id}: {e}")
     
     def _check_jenkins_build(self):
-        """Check Jenkins build status and fetch results if complete"""
+        """Check Jenkins build status and fetch results if complete (used by cron)"""
         self.ensure_one()
         
         config = self.config_id or self.env['qa.test.ai.config'].search([('active', '=', True)], limit=1)
@@ -458,12 +458,12 @@ class QATestRun(models.Model):
         except Exception as e:
             _logger.warning(f"Could not fetch test results: {e}")
         
-        # Update run state and timing
-        self.write({
-            'state': odoo_state,
-            'end_time': fields.Datetime.now(),
-            'duration': duration,
-        })
+        # Update run state using SQL to avoid ORM transaction issues
+        self.env.cr.execute("""
+            UPDATE qa_test_run 
+            SET state = %s, end_time = %s, duration = %s
+            WHERE id = %s
+        """, (odoo_state, fields.Datetime.now(), duration, self.id))
         
         # Create individual test results if we have them
         try:
@@ -643,31 +643,32 @@ class QATestRun(models.Model):
         """Manual button to refresh Jenkins status"""
         self.ensure_one()
         
-        if self.triggered_by != 'jenkins':
+        # Read values directly to avoid ORM issues
+        run_data = self.read(['triggered_by', 'jenkins_build_number', 'state'])[0]
+        
+        if run_data.get('triggered_by') != 'jenkins':
             raise UserError('This test run was not triggered by Jenkins.')
         
-        if not self.jenkins_build_number:
+        if not run_data.get('jenkins_build_number'):
             raise UserError('No Jenkins build number found.')
         
-        # Use a savepoint so we can recover from errors
+        # Do the Jenkins check in a new cursor to isolate from any transaction issues
         try:
-            with self.env.cr.savepoint():
-                self._check_jenkins_build()
+            self._do_jenkins_refresh()
         except Exception as e:
             _logger.error(f"Error checking Jenkins status: {e}")
-            # Don't raise here - show a notification instead
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
                     'title': 'Jenkins Status Check Failed',
-                    'message': str(e),
+                    'message': str(e)[:200],
                     'sticky': True,
                     'type': 'danger',
                 }
             }
         
-        # Get result count safely - use a fresh read
+        # Get fresh result count
         result_count = self.env['qa.test.result'].search_count([('run_id', '=', self.id)])
         current_state = self.read(['state'])[0]['state']
         
@@ -681,3 +682,60 @@ class QATestRun(models.Model):
                 'type': 'success',
             }
         }
+    
+    def _do_jenkins_refresh(self):
+        """Perform Jenkins refresh with proper error handling"""
+        self.ensure_one()
+        
+        config = self.config_id or self.env['qa.test.ai.config'].search([('active', '=', True)], limit=1)
+        if not config or not config.jenkins_enabled:
+            raise UserError('Jenkins not configured')
+        
+        from ..services.jenkins_client import JenkinsClient
+        client = JenkinsClient(config)
+        
+        # Get build status from Jenkins
+        status = client.get_build_status(
+            job_name=config.jenkins_job_name,
+            build_number=self.jenkins_build_number
+        )
+        
+        _logger.info(f"Jenkins build #{self.jenkins_build_number} status: {status}")
+        
+        if status.get('building'):
+            _logger.info(f"Build #{self.jenkins_build_number} still running...")
+            return  # Still running, nothing to update
+        
+        # Map Jenkins result to Odoo state
+        jenkins_result = status.get('result', 'FAILURE')
+        result_map = {
+            'SUCCESS': 'passed',
+            'FAILURE': 'failed',
+            'UNSTABLE': 'failed',
+            'ABORTED': 'cancelled',
+            'NOT_BUILT': 'error',
+        }
+        odoo_state = result_map.get(jenkins_result, 'error')
+        duration = status.get('duration', 0) / 1000
+        
+        # Fetch test results
+        test_results = {'total': 0, 'passed': 0, 'failed': 0, 'details': []}
+        try:
+            test_results = self._fetch_jenkins_robot_results(client, config.jenkins_job_name)
+        except Exception as e:
+            _logger.warning(f"Could not fetch test results: {e}")
+        
+        # Update run - use SQL directly to avoid ORM issues
+        self.env.cr.execute("""
+            UPDATE qa_test_run 
+            SET state = %s, end_time = %s, duration = %s
+            WHERE id = %s
+        """, (odoo_state, fields.Datetime.now(), duration, self.id))
+        
+        # Create test results
+        if test_results.get('details'):
+            self._create_test_results_from_jenkins(test_results['details'])
+        elif test_results.get('total', 0) > 0:
+            self._create_summary_results_from_jenkins(test_results, odoo_state)
+        
+        _logger.info(f"Run {self.id} updated: {odoo_state}")
