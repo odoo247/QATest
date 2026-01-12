@@ -85,7 +85,7 @@ class AIGenerator:
         
         prompt = f"""You are an expert QA automation engineer specializing in Robot Framework test automation for Odoo ERP.
 
-Your task is to generate Robot Framework test cases based on the following functional specification.
+Your task is to generate Robot Framework test cases that will be executed via JSON-RPC API using OdooLibrary.
 
 ## SPECIFICATION DETAILS
 
@@ -116,71 +116,137 @@ Your task is to generate Robot Framework test cases based on the following funct
 **Available Buttons/Actions:**
 {context.get('analyzed_buttons', 'Not analyzed')}
 
-## REQUIREMENTS
+## ODOO LIBRARY KEYWORDS
 
-Generate Robot Framework test cases following these guidelines:
+You MUST use these OdooLibrary keywords for API-based testing:
 
-1. **Test Structure:**
-   - Use *** Settings ***, *** Variables ***, *** Test Cases ***, *** Keywords *** sections
-   - Include proper documentation for each test case
-   - Use meaningful test case names with TC prefix (e.g., TC001_Create_Customer_Invoice)
-   - Add relevant tags (smoke, regression, critical, etc.)
+```
+Connect To Odoo                         # Connect and authenticate (done in Suite Setup)
+Disconnect From Odoo                    # Disconnect (done in Suite Teardown)
+Create Record    model    field1=value1 field2=value2    # Returns record ID (integer)
+Read Record      model    ${{id}}        # Returns dict with field values
+Update Record    model    ${{id}}  field1=newvalue       # Returns True
+Delete Record    model    ${{id}}        # Returns True
+Search Records   model    domain=[('field','=','value')]  limit=10    # Returns list of IDs
+Search And Read Records    model    domain=[]    fields=['name']      # Returns list of dicts
+Record Exists    model    ${{id}}        # Returns True/False
+Get Field Value  model    ${{id}}  field_name            # Returns field value
+OdooLibrary.Call Method    model    ${{id}}    method_name           # Call any model method
+Get Current Date                        # Returns 'YYYY-MM-DD' string
+```
 
-2. **Odoo-Specific Best Practices:**
-   - Use proper XPath locators for Odoo fields: //div[@name='field_name']//input
-   - Handle Many2one fields with autocomplete: Input text, wait, click dropdown item
-   - Use proper wait strategies (Wait Until Element Is Visible, Wait Until Page Contains)
-   - Handle Odoo notifications and dialogs
-   - Navigate using app menu icons and breadcrumbs
+## CRITICAL RULES - READ CAREFULLY!
 
-3. **Common Odoo Locators Pattern:**
-   - Field input: //div[@name='FIELD_NAME']//input or //input[@id='FIELD_NAME']
-   - Buttons: //button[@name='ACTION_NAME'] or //button[contains(text(),'Button Text')]
-   - Save button: //button[contains(@class,'o_form_button_save')]
-   - Create button: //button[contains(@class,'o_list_button_add')]
-   - Smart buttons: //button[contains(@name,'action_view_')]
-   - Status badge: //span[contains(@class,'badge') and contains(text(),'Status')]
+### Rule 1: Integer Assertions
+WRONG: `Should Not Be Empty    ${{record_id}}`  (fails on integers!)
+RIGHT: `Should Be True    ${{record_id}} > 0`
 
-4. **Keywords:**
-   - Create reusable keywords for common operations
-   - Include proper error handling
-   - Add documentation to keywords
+### Rule 2: Checking Record Creation
+```robot
+${{id}}=    Create Record    res.partner    name=Test
+Should Be True    ${{id}} > 0
+```
 
-5. **Assertions:**
-   - Verify expected outcomes
-   - Check status changes
-   - Validate field values
+### Rule 3: Validation Tests (Expected Errors)
+When testing that invalid data is rejected, use Run Keyword And Expect Error:
+```robot
+Test Create Payment With Negative Amount
+    [Documentation]    Verify negative amount is rejected
+    [Tags]    validation    negative
+    Run Keyword And Expect Error    *negative*
+    ...    Create Record    account.payment    amount=-100
+```
+
+### Rule 4: Field Names
+- Always check the actual model for field names (they vary by Odoo version)
+- Common variations: ref vs memo, description vs comment
+- If unsure, use only standard fields: name, active, date, partner_id
+
+### Rule 5: Required Fields
+Before creating records, search for required related records:
+```robot
+${{journal_ids}}=    Search Records    account.journal    domain=[('type','=','bank')]    limit=1
+Should Be True    len(${{journal_ids}}) > 0    msg=No bank journal found
+${{journal_id}}=    Set Variable    ${{journal_ids[0]}}
+```
+
+### Rule 6: Posting/Confirming Records
+- You cannot post empty invoices/moves - add lines first
+- Use OdooLibrary.Call Method to avoid keyword conflicts:
+```robot
+OdooLibrary.Call Method    account.move    ${{invoice_id}}    action_post
+```
+
+### Rule 7: Dictionary Access
+When reading records, access fields like this:
+```robot
+${{data}}=    Read Record    res.partner    ${{id}}
+Should Be Equal    ${{data['name']}}    Expected Name
+Should Be True    ${{data['active']}} == True
+```
+
+### Rule 8: Domain Syntax
+Domains must be valid Python lists of tuples:
+```robot
+${{ids}}=    Search Records    res.partner    domain=[('is_company','=',True),('active','=',True)]
+```
+
+### Rule 9: Cleaning Up Test Data
+Delete test records in teardown:
+```robot
+Test Something
+    [Setup]    Create Test Data
+    [Teardown]    Delete Test Data
+    # test steps
+    
+*** Keywords ***
+Create Test Data
+    ${{TEST_PARTNER}}=    Create Record    res.partner    name=Test Partner
+    Set Suite Variable    ${{TEST_PARTNER}}
+    
+Delete Test Data
+    Run Keyword And Ignore Error    Delete Record    res.partner    ${{TEST_PARTNER}}
+```
+
+### Rule 10: Test Independence  
+Each test must be independent - don't rely on state from previous tests.
+
+## TEST TYPES TO GENERATE
+
+1. **CRUD Tests** - Create, Read, Update, Delete operations
+2. **Validation Tests** - Required fields, invalid data, constraints
+3. **Computed Field Tests** - Verify computed values are correct
+4. **Workflow Tests** - State changes, button actions
+5. **Edge Cases** - Empty values, maximum values, special characters
 
 ## OUTPUT FORMAT
 
-Return your response in the following JSON format:
+Return your response in JSON format:
 
 ```json
 {{
     "test_cases": [
         {{
-            "name": "TC001_Test_Case_Name",
-            "description": "Brief description of what this test does",
-            "tags": "smoke, billing, invoice",
-            "robot_code": "*** Test Cases ***\\nTC001_Test_Case_Name\\n    [Documentation]    Test description\\n    [Tags]    smoke    billing\\n    # Test steps here..."
-        }},
-        {{
-            "name": "TC002_Another_Test",
-            "description": "Description",
-            "tags": "regression",
-            "robot_code": "..."
+            "name": "Test Create Record With Minimum Fields",
+            "description": "Verify record creation with only required fields",
+            "tags": "crud, smoke",
+            "robot_code": "*** Test Cases ***\\nTest Create Record With Minimum Fields\\n    [Documentation]    Verify record creation with minimum fields\\n    [Tags]    crud    smoke\\n    ${{partner}}=    Create Record    res.partner    name=Test Customer\\n    Should Be True    ${{partner}} > 0\\n    ${{data}}=    Read Record    res.partner    ${{partner}}\\n    Should Be Equal    ${{data['name']}}    Test Customer\\n    [Teardown]    Run Keyword And Ignore Error    Delete Record    res.partner    ${{partner}}"
         }}
     ]
 }}
 ```
 
-Generate comprehensive test cases that cover the functional specification. Include both positive and negative test scenarios where applicable.
+## IMPORTANT NOTES
 
-IMPORTANT: 
 - Generate ONLY valid Robot Framework syntax
-- Use 4 spaces for indentation
-- Include all necessary keywords inline or define them
+- Use 4 spaces for indentation (not tabs)  
+- Always use ${{variable}} syntax (doubled braces for JSON)
 - Make tests independent and self-contained
+- Include proper [Teardown] to clean up test data
+- Use OdooLibrary.Call Method instead of BuiltIn.Call Method for Odoo methods
+- Test names should describe WHAT is tested, not HOW
+
+Generate comprehensive, well-structured test cases that follow all the rules above.
 """
         return prompt
     
@@ -467,44 +533,107 @@ Return ONLY the corrected Robot Framework code, no explanation needed.
 
 {chr(10).join(f'- {c}' for c in categories)}
 
+## ODOO LIBRARY KEYWORDS
+
+These tests will use OdooLibrary which provides these keywords:
+
+```
+Create Record    model    field1=value1 field2=value2    # Returns record ID (integer)
+Read Record      model    ${{id}}        # Returns dict with field values  
+Update Record    model    ${{id}}  field1=newvalue       # Returns True
+Delete Record    model    ${{id}}        # Returns True
+Search Records   model    domain=[('field','=','value')]  limit=10    # Returns list of IDs
+Record Exists    model    ${{id}}        # Returns True/False
+Get Field Value  model    ${{id}}  field_name            # Returns field value
+OdooLibrary.Call Method    model    ${{id}}    method_name    # Call model method
+```
+
+## CRITICAL RULES - MUST FOLLOW!
+
+### Rule 1: Integer Assertions (VERY IMPORTANT!)
+WRONG: `Should Not Be Empty    ${{record}}`  (FAILS on integers!)
+RIGHT: `Should Be True    ${{record}} > 0`
+
+### Rule 2: Checking Creation Success
+```robot
+${{id}}=    Create Record    {model_analysis.model_name}    name=Test
+Should Be True    ${{id}} > 0    msg=Record was not created
+```
+
+### Rule 3: Validation Tests (Expected Failures)
+Use Run Keyword And Expect Error for tests that SHOULD fail:
+```robot
+Test Create Without Required Field
+    [Documentation]    Verify required field validation
+    [Tags]    validation    negative
+    Run Keyword And Expect Error    *required*
+    ...    Create Record    {model_analysis.model_name}    optional_field=value
+```
+
+### Rule 4: Reading Dictionary Fields
+```robot
+${{data}}=    Read Record    {model_analysis.model_name}    ${{id}}
+Should Be Equal    ${{data['name']}}    Expected Value
+Should Be True    ${{data['amount']}} > 0
+```
+
+### Rule 5: Getting Related Records First
+```robot
+# Always search for required related records first
+${{partner_ids}}=    Search Records    res.partner    domain=[('is_company','=',True)]    limit=1
+Should Be True    len(${{partner_ids}}) > 0    msg=No partner found
+${{partner_id}}=    Set Variable    ${{partner_ids[0]}}
+```
+
+### Rule 6: Calling Methods Without Keyword Conflict
+Use `OdooLibrary.Call Method` to avoid conflict with BuiltIn.Call Method:
+```robot
+OdooLibrary.Call Method    account.move    ${{invoice_id}}    action_post
+```
+
+### Rule 7: Cleanup in Teardown
+```robot
+Test Something
+    [Teardown]    Run Keyword And Ignore Error    Delete Record    {model_analysis.model_name}    ${{TEST_ID}}
+    ${{TEST_ID}}=    Create Record    {model_analysis.model_name}    name=Test
+    Set Test Variable    ${{TEST_ID}}
+    # ... test steps
+```
+
+### Rule 8: Independent Tests
+Each test must be independent - never rely on state from other tests.
+
+### Rule 9: Check Field Existence Before Testing
+Not all fields exist in all Odoo versions. Use only documented/verified fields.
+
 ## REQUIREMENTS
 
 Generate up to {max_tests} Robot Framework test cases following these guidelines:
 
-1. **Naming Convention:** test_{{action}}_{{model}}_{{scenario}}
-   Example: test_create_sale_order_with_required_fields
+1. **Naming Convention:** Test {{Action}} {{Model}} {{Scenario}}
+   Example: Test Create Sale Order With Required Fields
 
-2. **Use Odoo XML-RPC/API testing approach:**
-   - Create records using Odoo model methods
-   - Validate field values and computations
-   - Test constraints and error handling
-   - Verify workflow transitions
+2. **Test Independence:** Each test creates its own data and cleans up after
 
-3. **Test Structure:**
-   - Each test should be independent
-   - Include setup and assertions
-   - Handle cleanup if needed
-
-4. **For CRUD tests:**
+3. **For CRUD tests:**
    - Test create with minimum required fields
-   - Test create with all fields
+   - Test create with optional fields
+   - Test read and verify field values
    - Test update operations
    - Test delete/archive operations
 
-5. **For Validation tests:**
+4. **For Validation tests:**
    - Test each required field (should fail without)
-   - Test each constraint (should fail when violated)
-   - Test field type validation
+   - Use `Run Keyword And Expect Error` for expected failures
+   - Test constraint violations
 
-6. **For Workflow tests:**
-   - Test each valid state transition
-   - Test action methods that change state
-   - Test invalid transitions (should fail)
+5. **For Workflow tests:**
+   - Test valid state transitions using OdooLibrary.Call Method
+   - Verify state changes after actions
 
-7. **For Negative tests:**
-   - Test with invalid data types
-   - Test with missing required data
-   - Test edge cases (empty, very long, special chars)
+6. **For Negative tests:**
+   - Test with invalid data (wrong types, out of range)
+   - Use `Run Keyword And Expect Error` to verify rejection
 
 ## OUTPUT FORMAT
 
@@ -514,21 +643,21 @@ Return your response in this JSON format:
 {{
     "test_scenarios": [
         {{
-            "name": "test_create_model_with_required_fields",
+            "name": "Test Create {model_analysis.model_name.split('.')[-1].replace('_', ' ').title()} With Required Fields",
             "test_id": "TC001",
-            "description": "Verify model can be created with required fields",
+            "description": "Verify record can be created with required fields only",
             "category": "crud",
             "steps": [
-                {{"name": "Create record", "action": "create", "expected": "Record created successfully"}},
-                {{"name": "Verify name", "action": "assert field", "expected": "Name is set"}}
+                {{"name": "Create record", "action": "create", "expected": "Record ID returned"}},
+                {{"name": "Verify creation", "action": "assert", "expected": "ID is positive integer"}}
             ],
-            "robot_code": "*** Test Cases ***\\nTest Create Model With Required Fields\\n    [Documentation]    Verify model creation\\n    [Tags]    crud    smoke\\n    ${{record}}=    Create Record    model.name\\n    ...    name=Test Record\\n    Should Not Be Empty    ${{record}}"
+            "robot_code": "*** Test Cases ***\\nTest Create Record With Required Fields\\n    [Documentation]    Verify model creation with required fields\\n    [Tags]    crud    smoke\\n    ${{id}}=    Create Record    {model_analysis.model_name}\\n    ...    name=Test Record\\n    Should Be True    ${{id}} > 0    msg=Record was not created\\n    [Teardown]    Run Keyword And Ignore Error    Delete Record    {model_analysis.model_name}    ${{id}}"
         }}
     ]
 }}
 ```
 
-Generate comprehensive tests covering the specified categories. Focus on testing actual business logic discovered in the code analysis.
+Generate comprehensive tests covering the specified categories. Ensure all tests follow the CRITICAL RULES above.
 """
         return prompt
 

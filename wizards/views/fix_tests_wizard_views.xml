@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Fix Tests Wizard Form View -->
+    <record id="view_qa_fix_tests_wizard_form" model="ir.ui.view">
+        <field name="name">qa.fix.tests.wizard.form</field>
+        <field name="model">qa.fix.tests.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Fix Failed Tests">
+                <header>
+                    <button name="action_analyze" type="object" 
+                            string="Analyze with AI" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_apply_all" type="object" 
+                            string="Apply All Fixes" class="btn-primary"
+                            invisible="state != 'review'"/>
+                    <button name="action_apply_selected" type="object" 
+                            string="Apply Selected" class="btn-secondary"
+                            invisible="state != 'review'"/>
+                    <button name="action_rerun_tests" type="object" 
+                            string="Re-run Fixed Tests" class="btn-success"
+                            invisible="state != 'done' and fixed_count == 0"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <span invisible="state != 'draft'">Fix Failed Tests</span>
+                            <span invisible="state != 'analyzing'">Analyzing Tests...</span>
+                            <span invisible="state != 'review'">Review Suggested Fixes</span>
+                            <span invisible="state != 'done'">Fixes Applied</span>
+                        </h1>
+                    </div>
+                    
+                    <!-- Progress -->
+                    <div class="alert alert-info" role="alert" invisible="state != 'analyzing'">
+                        <strong>Analyzing:</strong> <field name="analyzed_count" nolabel="1"/> / <field name="total_count" nolabel="1"/> tests
+                    </div>
+                    
+                    <div class="alert alert-success" role="alert" invisible="state != 'done'">
+                        <strong>Complete!</strong> <field name="fixed_count" nolabel="1"/> tests fixed.
+                    </div>
+                    
+                    <!-- Source Selection (Draft state) -->
+                    <group invisible="state != 'draft'">
+                        <group string="Select Failed Tests">
+                            <field name="source_type" widget="radio"/>
+                            <field name="run_id" invisible="source_type != 'run'"
+                                   options="{'no_create': True}"/>
+                            <field name="test_case_ids" widget="many2many_tags"
+                                   invisible="source_type != 'selected'"
+                                   options="{'no_create': True}"/>
+                        </group>
+                        <group string="Configuration">
+                            <field name="config_id"/>
+                            <field name="include_context"/>
+                            <field name="auto_apply"/>
+                        </group>
+                    </group>
+                    
+                    <!-- Test cases preview in draft -->
+                    <group string="Selected Test Cases" invisible="state != 'draft' or not test_case_ids">
+                        <field name="test_case_ids" nolabel="1" readonly="1">
+                            <tree>
+                                <field name="test_id"/>
+                                <field name="name"/>
+                                <field name="state" widget="badge" 
+                                       decoration-danger="state in ('failed', 'error')"/>
+                                <field name="last_error_message" optional="show"/>
+                            </tree>
+                        </field>
+                    </group>
+                    
+                    <!-- Review Fixes -->
+                    <notebook invisible="state not in ('review', 'done')">
+                        <page string="Suggested Fixes" name="fixes">
+                            <field name="line_ids" nolabel="1">
+                                <tree editable="bottom" decoration-success="applied" 
+                                      decoration-muted="not selected">
+                                    <field name="selected" widget="boolean_toggle"/>
+                                    <field name="test_id"/>
+                                    <field name="test_name"/>
+                                    <field name="fix_type" widget="badge"
+                                           decoration-success="fix_type == 'code_fix'"
+                                           decoration-warning="fix_type == 'validation_test'"
+                                           decoration-danger="fix_type == 'manual_review'"
+                                           decoration-info="fix_type == 'skip_test'"/>
+                                    <field name="confidence" widget="badge"
+                                           decoration-success="confidence == 'high'"
+                                           decoration-warning="confidence == 'medium'"
+                                           decoration-danger="confidence == 'low'"/>
+                                    <field name="analysis"/>
+                                    <field name="applied" readonly="1"/>
+                                    <button name="action_apply_fix" type="object" 
+                                            string="Apply" icon="fa-check"
+                                            invisible="applied or not suggested_fix"/>
+                                    <button name="action_edit_fix" type="object"
+                                            string="Edit" icon="fa-pencil"
+                                            invisible="applied"/>
+                                    <button name="action_skip_test" type="object"
+                                            string="Skip" icon="fa-ban"
+                                            invisible="applied"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Fix Tests Wizard Line Form (for editing) -->
+    <record id="view_qa_fix_tests_wizard_line_form" model="ir.ui.view">
+        <field name="name">qa.fix.tests.wizard.line.form</field>
+        <field name="model">qa.fix.tests.wizard.line</field>
+        <field name="arch" type="xml">
+            <form string="Edit Test Fix">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="test_id"/>
+                            <field name="test_name"/>
+                            <field name="fix_type"/>
+                            <field name="confidence"/>
+                        </group>
+                        <group>
+                            <field name="selected"/>
+                            <field name="applied" readonly="1"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Error" name="error">
+                            <field name="error_message" readonly="1"/>
+                        </page>
+                        <page string="Analysis" name="analysis">
+                            <field name="analysis" readonly="1"/>
+                        </page>
+                        <page string="Original Code" name="original">
+                            <field name="original_code" readonly="1" 
+                                   widget="ace" options="{'mode': 'robot'}"/>
+                        </page>
+                        <page string="Suggested Fix" name="suggested">
+                            <field name="suggested_fix" readonly="1"
+                                   widget="ace" options="{'mode': 'robot'}"/>
+                        </page>
+                        <page string="Edit Fix" name="edit">
+                            <field name="edited_fix" 
+                                   widget="ace" options="{'mode': 'robot'}"
+                                   placeholder="Edit the suggested fix here before applying..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <footer>
+                    <button name="action_apply_fix" type="object" 
+                            string="Apply Fix" class="btn-primary"
+                            invisible="applied"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+    <!-- Action to open wizard from Test Run -->
+    <record id="action_fix_failed_tests_wizard" model="ir.actions.act_window">
+        <field name="name">Fix Failed Tests</field>
+        <field name="res_model">qa.fix.tests.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{
+            'default_source_type': 'run',
+            'default_run_id': active_id,
+        }</field>
+    </record>
+    
+    <!-- Action from Test Cases list -->
+    <record id="action_fix_selected_tests_wizard" model="ir.actions.act_window">
+        <field name="name">Fix Selected Tests</field>
+        <field name="res_model">qa.fix.tests.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{
+            'default_source_type': 'selected',
+            'default_test_case_ids': active_ids,
+        }</field>
+    </record>
+</odoo>

@@ -87,6 +87,7 @@ Technical Requirements
         # Wizards
         'wizards/views/generate_tests_wizard_views.xml',
         'wizards/views/run_tests_wizard_views.xml',
+        'wizards/views/fix_tests_wizard_views.xml',
     ],
     # Dashboard assets commented out - can be added once core is working
     # 'assets': {

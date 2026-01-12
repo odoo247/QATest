@@ -259,17 +259,7 @@ class QATestRun(models.Model):
             from ..services.jenkins_client import JenkinsClient
             client = JenkinsClient(config)
             
-            # Update state BEFORE triggering Jenkins so the run exists when Jenkins calls back
-            self.write({
-                'state': 'running',
-                'triggered_by': 'jenkins',
-                'start_time': fields.Datetime.now(),
-            })
-            
-            # Force commit so the record is visible to Jenkins API call
-            self.env.cr.commit()
-            
-            # Trigger Jenkins build
+            # Trigger Jenkins build first to get build number
             build_number = client.trigger_build(
                 job_name=config.jenkins_job_name,
                 parameters={
@@ -279,10 +269,13 @@ class QATestRun(models.Model):
                 }
             )
             
-            # Update with build number
+            # Update state after successful trigger
             self.write({
+                'state': 'running',
+                'triggered_by': 'jenkins',
                 'jenkins_build_number': build_number,
                 'jenkins_build_url': f"{config.jenkins_url}/job/{config.jenkins_job_name}/{build_number}",
+                'start_time': fields.Datetime.now(),
             })
             
             return {
@@ -290,14 +283,11 @@ class QATestRun(models.Model):
                 'tag': 'display_notification',
                 'params': {
                     'title': 'Jenkins Build Triggered',
-                    'message': f'Build #{build_number} started.',
+                    'message': f'Build #{build_number} started. Jenkins will fetch tests in a few seconds.',
                     'type': 'success',
                 }
             }
         except Exception as e:
-            # Revert state on error
-            self.write({'state': 'pending', 'triggered_by': False})
-            
             error_msg = str(e)
             if '404' in error_msg:
                 raise UserError(f'Jenkins job not found: {config.jenkins_job_name}\n\n'
@@ -653,15 +643,28 @@ class QATestRun(models.Model):
         if not self.jenkins_build_number:
             raise UserError('No Jenkins build number found.')
         
-        # Allow checking status for any state (for debugging)
-        self._check_jenkins_build()
+        # Check Jenkins and update status
+        try:
+            self._check_jenkins_build()
+        except Exception as e:
+            _logger.error(f"Error checking Jenkins status: {e}")
+            raise UserError(f'Error checking Jenkins status: {str(e)}')
+        
+        # Re-read record to get fresh values after potential updates
+        self.invalidate_recordset()
+        
+        # Get result count safely
+        try:
+            result_count = len(self.result_ids)
+        except Exception:
+            result_count = 0
         
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': 'Jenkins Status Refreshed',
-                'message': f'Run status: {self.state}, Results: {len(self.result_ids)}',
+                'message': f'Run status: {self.state}, Results: {result_count}',
                 'sticky': False,
                 'type': 'success',
             }
