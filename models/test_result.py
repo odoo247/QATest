@@ -16,12 +16,15 @@ class QATestResult(models.Model):
     
     # Relations
     test_case_id = fields.Many2one('qa.test.case', string='Test Case', 
-                                   required=True, ondelete='cascade')
+                                   required=False, ondelete='cascade')
     run_id = fields.Many2one('qa.test.run', string='Test Run', ondelete='cascade')
     spec_id = fields.Many2one('qa.test.spec', string='Specification',
                               related='test_case_id.spec_id')
     suite_id = fields.Many2one('qa.test.suite', string='Suite',
                                related='test_case_id.suite_id')
+    
+    # For unlinked results (when test name doesn't match)
+    test_name = fields.Char(string='Test Name', help='Name of test when not linked to test case')
     
     # Status
     status = fields.Selection([
@@ -64,12 +67,17 @@ class QATestResult(models.Model):
     # Additional data (JSON)
     extra_data = fields.Text(string='Extra Data (JSON)')
 
-    @api.depends('test_case_id', 'status', 'execution_date')
+    @api.depends('test_case_id', 'test_name', 'status', 'execution_date')
     def _compute_name(self):
         for result in self:
-            if result.test_case_id and result.execution_date:
+            if result.execution_date:
                 date_str = result.execution_date.strftime('%Y-%m-%d %H:%M')
-                result.name = f"{result.test_case_id.name} - {result.status} ({date_str})"
+                if result.test_case_id:
+                    result.name = f"{result.test_case_id.name} - {result.status} ({date_str})"
+                elif result.test_name:
+                    result.name = f"{result.test_name} - {result.status} ({date_str})"
+                else:
+                    result.name = f"Result - {result.status} ({date_str})"
             else:
                 result.name = 'New Result'
 
@@ -163,11 +171,17 @@ class QATestResult(models.Model):
     def action_rerun_test(self):
         """Re-run the test that produced this result"""
         self.ensure_one()
+        if not self.test_case_id:
+            from odoo.exceptions import UserError
+            raise UserError('This result is not linked to a test case and cannot be re-run.')
         return self.test_case_id.action_run_test()
 
     def action_view_test_case(self):
         """View the test case"""
         self.ensure_one()
+        if not self.test_case_id:
+            from odoo.exceptions import UserError
+            raise UserError('This result is not linked to a test case.')
         return {
             'type': 'ir.actions.act_window',
             'res_model': 'qa.test.case',

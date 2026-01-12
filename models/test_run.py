@@ -605,9 +605,10 @@ class QATestRun(models.Model):
                 _logger.info(f"No matching test case for '{detail['name']}', creating unlinked result")
                 self.env['qa.test.result'].create({
                     'run_id': self.id,
+                    'test_name': detail['name'],
                     'status': detail['status'],
                     'duration': detail['duration'],
-                    'message': f"Test: {detail['name']}\n{detail['message']}",
+                    'message': detail['message'],
                     'log': f"Jenkins build #{self.jenkins_build_number}\nTest: {detail['name']}",
                 })
     

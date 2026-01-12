@@ -21,7 +21,8 @@
                     </div>
                     <group>
                         <group>
-                            <field name="test_case_id" readonly="1"/>
+                            <field name="test_case_id" readonly="1" invisible="not test_case_id"/>
+                            <field name="test_name" readonly="1" invisible="test_case_id"/>
                             <field name="run_id" readonly="1"/>
                             <field name="status" widget="badge"
                                    decoration-success="status == 'passed'"
@@ -81,7 +82,8 @@
                   decoration-danger="status in ['failed', 'error']"
                   decoration-muted="status == 'skipped'">
                 <field name="execution_date"/>
-                <field name="test_case_id"/>
+                <field name="test_case_id" optional="show"/>
+                <field name="test_name" optional="hide"/>
                 <field name="run_id"/>
                 <field name="status" widget="badge"/>
                 <field name="duration_display"/>
@@ -228,7 +230,8 @@
                             <field name="result_ids" readonly="1">
                                 <list decoration-success="status == 'passed'"
                                       decoration-danger="status in ['failed', 'error']">
-                                    <field name="test_case_id"/>
+                                    <field name="test_case_id" optional="show"/>
+                                    <field name="test_name" optional="hide"/>
                                     <field name="status" widget="badge"/>
                                     <field name="duration_display"/>
                                     <field name="message"/>
