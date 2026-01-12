@@ -68,7 +68,7 @@ Technical Requirements
         'data/config_data.xml',
         'data/cron_data.xml',
         'data/mail_template_data.xml',
-        # Wizards
+        # Wizards - MUST load before views that reference wizard actions
         'wizards/views/generate_tests_wizard_views.xml',
         'wizards/views/run_tests_wizard_views.xml',
         'wizards/views/fix_tests_wizard_views.xml',

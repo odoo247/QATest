@@ -47,7 +47,6 @@
                             <field name="run_id" invisible="source_type != 'run'"
                                    options="{'no_create': True}"/>
                             <field name="test_case_ids" widget="many2many_tags"
-                                   invisible="source_type != 'selected'"
                                    options="{'no_create': True}"/>
                         </group>
                         <group string="Configuration">
@@ -55,19 +54,6 @@
                             <field name="include_context"/>
                             <field name="auto_apply"/>
                         </group>
-                    </group>
-                    
-                    <!-- Test cases preview in draft -->
-                    <group string="Selected Test Cases" invisible="state != 'draft' or not test_case_ids">
-                        <field name="test_case_ids" nolabel="1" readonly="1">
-                            <tree>
-                                <field name="test_id"/>
-                                <field name="name"/>
-                                <field name="state" widget="badge" 
-                                       decoration-danger="state in ('failed', 'error')"/>
-                                <field name="last_error_message" optional="show"/>
-                            </tree>
-                        </field>
                     </group>
                     
                     <!-- Review Fixes -->
@@ -136,16 +122,13 @@
                             <field name="analysis" readonly="1"/>
                         </page>
                         <page string="Original Code" name="original">
-                            <field name="original_code" readonly="1" 
-                                   widget="ace" options="{'mode': 'robot'}"/>
+                            <field name="original_code" readonly="1"/>
                         </page>
                         <page string="Suggested Fix" name="suggested">
-                            <field name="suggested_fix" readonly="1"
-                                   widget="ace" options="{'mode': 'robot'}"/>
+                            <field name="suggested_fix" readonly="1"/>
                         </page>
                         <page string="Edit Fix" name="edit">
                             <field name="edited_fix" 
-                                   widget="ace" options="{'mode': 'robot'}"
                                    placeholder="Edit the suggested fix here before applying..."/>
                         </page>
                     </notebook>
