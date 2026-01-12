@@ -65,12 +65,12 @@
         </field>
     </record>
     
-    <!-- Separate tree view for wizard lines -->
+    <!-- Separate list view for wizard lines -->
     <record id="view_qa_fix_tests_wizard_line_tree" model="ir.ui.view">
-        <field name="name">qa.fix.tests.wizard.line.tree</field>
+        <field name="name">qa.fix.tests.wizard.line.list</field>
         <field name="model">qa.fix.tests.wizard.line</field>
         <field name="arch" type="xml">
-            <tree editable="bottom" decoration-success="applied" decoration-muted="not selected">
+            <list editable="bottom" decoration-success="applied" decoration-muted="not selected">
                 <field name="selected" widget="boolean_toggle"/>
                 <field name="test_id"/>
                 <field name="test_name"/>
@@ -87,7 +87,7 @@
                 <button name="action_skip_test" type="object"
                         string="Skip" icon="fa-ban"
                         invisible="applied"/>
-            </tree>
+            </list>
         </field>
     </record>
     
