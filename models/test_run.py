@@ -410,7 +410,8 @@ class QATestRun(models.Model):
         
         for run in running_runs:
             try:
-                run._check_jenkins_build()
+                with self.env.cr.savepoint():
+                    run._check_jenkins_build()
             except Exception as e:
                 _logger.error(f"Error checking Jenkins build for run {run.id}: {e}")
     
@@ -426,50 +427,55 @@ class QATestRun(models.Model):
         from ..services.jenkins_client import JenkinsClient
         client = JenkinsClient(config)
         
+        # Get build status
+        status = client.get_build_status(
+            job_name=config.jenkins_job_name,
+            build_number=self.jenkins_build_number
+        )
+        
+        _logger.info(f"Jenkins build #{self.jenkins_build_number} status: {status}")
+        
+        if status.get('building'):
+            _logger.info(f"Build #{self.jenkins_build_number} still running...")
+            return
+        
+        jenkins_result = status.get('result', 'FAILURE')
+        result_map = {
+            'SUCCESS': 'passed',
+            'FAILURE': 'failed',
+            'UNSTABLE': 'failed',
+            'ABORTED': 'cancelled',
+            'NOT_BUILT': 'error',
+        }
+        
+        odoo_state = result_map.get(jenkins_result, 'error')
+        duration = status.get('duration', 0) / 1000
+        
+        # Fetch results separately with its own error handling
+        test_results = {'total': 0, 'passed': 0, 'failed': 0, 'details': []}
         try:
-            status = client.get_build_status(
-                job_name=config.jenkins_job_name,
-                build_number=self.jenkins_build_number
-            )
-            
-            _logger.info(f"Jenkins build #{self.jenkins_build_number} status: {status}")
-            
-            if status.get('building'):
-                _logger.info(f"Build #{self.jenkins_build_number} still running...")
-                return
-            
-            jenkins_result = status.get('result', 'FAILURE')
-            result_map = {
-                'SUCCESS': 'passed',
-                'FAILURE': 'failed',
-                'UNSTABLE': 'failed',
-                'ABORTED': 'cancelled',
-                'NOT_BUILT': 'error',
-            }
-            
-            odoo_state = result_map.get(jenkins_result, 'error')
-            duration = status.get('duration', 0) / 1000
-            
             test_results = self._fetch_jenkins_robot_results(client, config.jenkins_job_name)
-            
-            # Update run state and timing
-            self.write({
-                'state': odoo_state,
-                'end_time': fields.Datetime.now(),
-                'duration': duration,
-            })
-            
-            # Create individual test results if we have them
+        except Exception as e:
+            _logger.warning(f"Could not fetch test results: {e}")
+        
+        # Update run state and timing
+        self.write({
+            'state': odoo_state,
+            'end_time': fields.Datetime.now(),
+            'duration': duration,
+        })
+        
+        # Create individual test results if we have them
+        try:
             if test_results.get('details'):
                 self._create_test_results_from_jenkins(test_results['details'])
             elif test_results.get('total', 0) > 0:
                 # No details but we have totals - create summary results for test cases in run
                 self._create_summary_results_from_jenkins(test_results, odoo_state)
-            
-            _logger.info(f"Run {self.id} updated: {odoo_state} (passed: {test_results.get('passed', 0)}, failed: {test_results.get('failed', 0)})")
-            
         except Exception as e:
-            _logger.error(f"Failed to check Jenkins build: {e}")
+            _logger.warning(f"Error creating test results: {e}")
+        
+        _logger.info(f"Run {self.id} updated: {odoo_state} (passed: {test_results.get('passed', 0)}, failed: {test_results.get('failed', 0)})")
     
     def _fetch_jenkins_robot_results(self, client, job_name):
         """Fetch Robot Framework results from Jenkins"""
@@ -643,28 +649,34 @@ class QATestRun(models.Model):
         if not self.jenkins_build_number:
             raise UserError('No Jenkins build number found.')
         
-        # Check Jenkins and update status
+        # Use a savepoint so we can recover from errors
         try:
-            self._check_jenkins_build()
+            with self.env.cr.savepoint():
+                self._check_jenkins_build()
         except Exception as e:
             _logger.error(f"Error checking Jenkins status: {e}")
-            raise UserError(f'Error checking Jenkins status: {str(e)}')
+            # Don't raise here - show a notification instead
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Jenkins Status Check Failed',
+                    'message': str(e),
+                    'sticky': True,
+                    'type': 'danger',
+                }
+            }
         
-        # Re-read record to get fresh values after potential updates
-        self.invalidate_recordset()
-        
-        # Get result count safely
-        try:
-            result_count = len(self.result_ids)
-        except Exception:
-            result_count = 0
+        # Get result count safely - use a fresh read
+        result_count = self.env['qa.test.result'].search_count([('run_id', '=', self.id)])
+        current_state = self.read(['state'])[0]['state']
         
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': 'Jenkins Status Refreshed',
-                'message': f'Run status: {self.state}, Results: {result_count}',
+                'message': f'Run status: {current_state}, Results: {result_count}',
                 'sticky': False,
                 'type': 'success',
             }
