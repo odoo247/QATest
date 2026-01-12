@@ -57,40 +57,37 @@
                     </group>
                     
                     <!-- Review Fixes -->
-                    <notebook invisible="state not in ('review', 'done')">
-                        <page string="Suggested Fixes" name="fixes">
-                            <field name="line_ids" nolabel="1">
-                                <tree editable="bottom" decoration-success="applied" 
-                                      decoration-muted="not selected">
-                                    <field name="selected" widget="boolean_toggle"/>
-                                    <field name="test_id"/>
-                                    <field name="test_name"/>
-                                    <field name="fix_type" widget="badge"
-                                           decoration-success="fix_type == 'code_fix'"
-                                           decoration-warning="fix_type == 'validation_test'"
-                                           decoration-danger="fix_type == 'manual_review'"
-                                           decoration-info="fix_type == 'skip_test'"/>
-                                    <field name="confidence" widget="badge"
-                                           decoration-success="confidence == 'high'"
-                                           decoration-warning="confidence == 'medium'"
-                                           decoration-danger="confidence == 'low'"/>
-                                    <field name="analysis"/>
-                                    <field name="applied" readonly="1"/>
-                                    <button name="action_apply_fix" type="object" 
-                                            string="Apply" icon="fa-check"
-                                            invisible="applied or not suggested_fix"/>
-                                    <button name="action_edit_fix" type="object"
-                                            string="Edit" icon="fa-pencil"
-                                            invisible="applied"/>
-                                    <button name="action_skip_test" type="object"
-                                            string="Skip" icon="fa-ban"
-                                            invisible="applied"/>
-                                </tree>
-                            </field>
-                        </page>
-                    </notebook>
+                    <group string="Suggested Fixes" invisible="state not in ('review', 'done')">
+                        <field name="line_ids" nolabel="1" colspan="2"/>
+                    </group>
                 </sheet>
             </form>
+        </field>
+    </record>
+    
+    <!-- Separate tree view for wizard lines -->
+    <record id="view_qa_fix_tests_wizard_line_tree" model="ir.ui.view">
+        <field name="name">qa.fix.tests.wizard.line.tree</field>
+        <field name="model">qa.fix.tests.wizard.line</field>
+        <field name="arch" type="xml">
+            <tree editable="bottom" decoration-success="applied" decoration-muted="not selected">
+                <field name="selected" widget="boolean_toggle"/>
+                <field name="test_id"/>
+                <field name="test_name"/>
+                <field name="fix_type" widget="badge"/>
+                <field name="confidence" widget="badge"/>
+                <field name="analysis"/>
+                <field name="applied" readonly="1"/>
+                <button name="action_apply_fix" type="object" 
+                        string="Apply" icon="fa-check"
+                        invisible="applied or not suggested_fix"/>
+                <button name="action_edit_fix" type="object"
+                        string="Edit" icon="fa-pencil"
+                        invisible="applied"/>
+                <button name="action_skip_test" type="object"
+                        string="Skip" icon="fa-ban"
+                        invisible="applied"/>
+            </tree>
         </field>
     </record>
     
