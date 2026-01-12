@@ -68,6 +68,10 @@ Technical Requirements
         'data/config_data.xml',
         'data/cron_data.xml',
         'data/mail_template_data.xml',
+        # Wizards
+        'wizards/views/generate_tests_wizard_views.xml',
+        'wizards/views/run_tests_wizard_views.xml',
+        'wizards/views/fix_tests_wizard_views.xml',
         # Views - ORDER MATTERS! Actions must exist before being referenced
         'views/customer_views.xml',
         'views/ai_config_views.xml',
@@ -84,10 +88,6 @@ Technical Requirements
         'views/dashboard_views.xml',
         # Menus (loaded AFTER actions)
         'views/menu_views.xml',
-        # Wizards
-        'wizards/views/generate_tests_wizard_views.xml',
-        'wizards/views/run_tests_wizard_views.xml',
-        'wizards/views/fix_tests_wizard_views.xml',
     ],
     # Dashboard assets commented out - can be added once core is working
     # 'assets': {
