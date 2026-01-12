@@ -26,6 +26,9 @@ class QATestResult(models.Model):
     # For unlinked results (when test name doesn't match)
     test_name = fields.Char(string='Test Name', help='Name of test when not linked to test case')
     
+    # Computed field showing test name from either source
+    display_test_name = fields.Char(string='Test', compute='_compute_display_test_name', store=True)
+    
     # Status
     status = fields.Selection([
         ('pending', 'Pending'),
@@ -80,6 +83,16 @@ class QATestResult(models.Model):
                     result.name = f"Result - {result.status} ({date_str})"
             else:
                 result.name = 'New Result'
+
+    @api.depends('test_case_id', 'test_case_id.name', 'test_name')
+    def _compute_display_test_name(self):
+        for result in self:
+            if result.test_case_id:
+                result.display_test_name = result.test_case_id.name
+            elif result.test_name:
+                result.display_test_name = result.test_name
+            else:
+                result.display_test_name = 'Unknown Test'
 
     @api.depends('status')
     def _compute_status_icon(self):

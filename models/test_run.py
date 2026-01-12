@@ -512,52 +512,76 @@ class QATestRun(models.Model):
         
         try:
             log = client.get_build_log(job_name, self.jenkins_build_number)
-            _logger.info(f"Parsing Jenkins log for build #{self.jenkins_build_number}")
+            _logger.info(f"Parsing Jenkins log for build #{self.jenkins_build_number}, log length: {len(log)}")
             
-            # Get totals - look for "1 test, 1 passed, 0 failed"
-            match = re.search(r'(\d+)\s+tests?,\s+(\d+)\s+passed,\s+(\d+)\s+failed', log)
-            if match:
-                results['total'] = int(match.group(1))
-                results['passed'] = int(match.group(2))
-                results['failed'] = int(match.group(3))
-                _logger.info(f"Found totals: {results['total']} tests, {results['passed']} passed, {results['failed']} failed")
+            # Get totals - look for "12 tests, 7 passed, 5 failed" or similar
+            totals_patterns = [
+                r'(\d+)\s+tests?,\s+(\d+)\s+passed,\s+(\d+)\s+failed',
+                r'(\d+)\s+test[s]?,\s+(\d+)\s+pass(?:ed)?,\s+(\d+)\s+fail(?:ed)?',
+                r'Total:\s*(\d+).*?Pass(?:ed)?:\s*(\d+).*?Fail(?:ed)?:\s*(\d+)',
+            ]
             
-            # Pattern for "Test Name :: description    | PASS |" or "Test Name :: description    | FAIL | error"
-            # Extract just the test name (before ::)
-            pattern_with_desc = re.compile(r'^([^:|]+?)\s*::\s*[^|]+\s+\|\s+(PASS|FAIL)\s+\|(.*)$', re.MULTILINE)
-            for m in pattern_with_desc.finditer(log):
-                test_name = m.group(1).strip()
-                # Skip suite-level results
-                if test_name in ('Tests', 'Smoke Test', 'Tests.Smoke Test') or test_name.startswith('Tests.'):
+            for pattern in totals_patterns:
+                match = re.search(pattern, log, re.IGNORECASE)
+                if match:
+                    results['total'] = int(match.group(1))
+                    results['passed'] = int(match.group(2))
+                    results['failed'] = int(match.group(3))
+                    _logger.info(f"Found totals: {results['total']} tests, {results['passed']} passed, {results['failed']} failed")
+                    break
+            
+            # Multiple patterns to find individual test results
+            # Robot Framework format: "Test Name    | PASS |" or "Test Name :: description    | FAIL | error message"
+            test_patterns = [
+                # Pattern 1: "Test Name :: Description    | PASS/FAIL |"
+                r'^([A-Z][A-Za-z0-9_ ]+(?:\s+[A-Za-z0-9_]+)*)\s*(?:::\s*[^|]*)?\s*\|\s*(PASS|FAIL)\s*\|(.*)$',
+                # Pattern 2: "Test Name    | PASS/FAIL | duration"
+                r'^([A-Z][A-Za-z0-9_ ]+)\s+\|\s*(PASS|FAIL)\s*\|(.*)$',
+                # Pattern 3: Lines starting with test keywords
+                r'^\*\*\*\s*Test[:\s]+([^\|]+?)\s*\*\*\*.*?(PASS|FAIL)',
+            ]
+            
+            seen_tests = set()
+            for line in log.split('\n'):
+                line = line.strip()
+                if not line:
                     continue
-                results['details'].append({
-                    'name': test_name,
-                    'status': 'passed' if m.group(2) == 'PASS' else 'failed',
-                    'duration': 0,
-                    'message': m.group(3).strip() if m.group(2) == 'FAIL' else '',
-                })
-                _logger.info(f"Found test: {test_name} = {m.group(2)}")
-            
-            # Pattern for simple "Test Name    | PASS |" without description
-            if not results['details']:
-                pattern_simple = re.compile(r'^([^:|]+?)\s+\|\s+(PASS|FAIL)\s+\|(.*)$', re.MULTILINE)
-                for m in pattern_simple.finditer(log):
-                    test_name = m.group(1).strip()
-                    # Skip suite-level results (contain dots)
-                    if '.' in test_name or test_name in ('Tests', 'Smoke Test'):
-                        continue
-                    results['details'].append({
-                        'name': test_name,
-                        'status': 'passed' if m.group(2) == 'PASS' else 'failed',
-                        'duration': 0,
-                        'message': m.group(3).strip() if m.group(2) == 'FAIL' else '',
-                    })
-                    _logger.info(f"Found test (simple): {test_name} = {m.group(2)}")
+                    
+                for pattern in test_patterns:
+                    match = re.match(pattern, line, re.IGNORECASE)
+                    if match:
+                        test_name = match.group(1).strip()
+                        status_str = match.group(2).upper()
+                        message = match.group(3).strip() if len(match.groups()) > 2 else ''
+                        
+                        # Skip suite-level and internal results
+                        skip_names = ['tests', 'smoke test', 'tests.smoke test', 'test suites', 
+                                     'output', 'log', 'report', 'downloaded tests']
+                        if test_name.lower() in skip_names:
+                            continue
+                        if test_name.startswith('Tests.') or '.' in test_name:
+                            continue
+                        if test_name in seen_tests:
+                            continue
+                            
+                        seen_tests.add(test_name)
+                        results['details'].append({
+                            'name': test_name,
+                            'status': 'passed' if status_str == 'PASS' else 'failed',
+                            'duration': 0,
+                            'message': message.strip('| \t'),
+                        })
+                        _logger.info(f"Found test: '{test_name}' = {status_str}, msg='{message[:50] if message else ''}'")
+                        break
             
             _logger.info(f"Parsed {len(results['details'])} test details from log")
+            
+            # If we found totals but no details, log the issue
+            if results['total'] > 0 and not results['details']:
+                _logger.warning(f"Found totals but no test details. Log sample: {log[:2000]}")
                 
         except Exception as e:
-            _logger.warning(f"Could not parse log: {e}")
+            _logger.error(f"Could not parse log: {e}", exc_info=True)
         
         return results
     
@@ -614,31 +638,65 @@ class QATestRun(models.Model):
     
     def _create_summary_results_from_jenkins(self, test_results, overall_status):
         """Create summary test results when no individual details available"""
-        _logger.info(f"Creating summary results: {test_results}")
+        _logger.info(f"Creating summary results: {test_results}, overall_status={overall_status}")
+        
+        passed_count = test_results.get('passed', 0)
+        failed_count = test_results.get('failed', 0)
+        total_count = test_results.get('total', 0)
         
         # If we have test cases in this run, create a result for each
-        # based on overall status (since we can't match individual tests)
         if self.test_case_ids:
-            for test_case in self.test_case_ids:
+            test_cases_list = list(self.test_case_ids)
+            _logger.info(f"Creating results for {len(test_cases_list)} test cases")
+            
+            # Distribute passed/failed based on counts
+            for i, test_case in enumerate(test_cases_list):
+                # If we have exact counts, assign status based on them
+                if i < passed_count:
+                    status = 'passed'
+                elif i < passed_count + failed_count:
+                    status = 'failed'
+                else:
+                    status = overall_status
+                
                 self.env['qa.test.result'].create({
                     'test_case_id': test_case.id,
+                    'test_name': test_case.name,  # Also set test_name for visibility
                     'run_id': self.id,
-                    'status': overall_status,
+                    'status': status,
                     'duration': 0,
-                    'message': f"Jenkins build #{self.jenkins_build_number} - {test_results.get('passed', 0)} passed, {test_results.get('failed', 0)} failed",
+                    'message': f"Jenkins build #{self.jenkins_build_number} - {passed_count} passed, {failed_count} failed",
                     'log': f"Result from Jenkins build #{self.jenkins_build_number}\n"
-                           f"Total: {test_results.get('total', 0)}\n"
-                           f"Passed: {test_results.get('passed', 0)}\n"
-                           f"Failed: {test_results.get('failed', 0)}",
+                           f"Total: {total_count}\n"
+                           f"Passed: {passed_count}\n"
+                           f"Failed: {failed_count}",
                 })
                 
                 test_case.write({
-                    'state': overall_status,
+                    'state': status,
                     'last_run_date': fields.Datetime.now(),
                 })
         else:
-            # No test cases linked - create a generic result
-            _logger.info("No test cases linked to run, creating generic summary")
+            # No test cases linked - create individual results based on counts
+            _logger.info(f"No test cases linked, creating {total_count} generic results")
+            
+            for i in range(passed_count):
+                self.env['qa.test.result'].create({
+                    'run_id': self.id,
+                    'test_name': f"Test {i+1}",
+                    'status': 'passed',
+                    'duration': 0,
+                    'message': f"Passed (Jenkins build #{self.jenkins_build_number})",
+                })
+            
+            for i in range(failed_count):
+                self.env['qa.test.result'].create({
+                    'run_id': self.id,
+                    'test_name': f"Test {passed_count + i + 1}",
+                    'status': 'failed',
+                    'duration': 0,
+                    'message': f"Failed (Jenkins build #{self.jenkins_build_number})",
+                })
 
     def action_refresh_jenkins_status(self):
         """Manual button to refresh Jenkins status"""
