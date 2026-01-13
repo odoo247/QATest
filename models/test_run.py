@@ -445,6 +445,8 @@ ${{DATABASE}}           {db_name}
 *** Test Cases ***
 """
         
+        keywords_content = ""
+        
         for tc in self.test_case_ids:
             content += f"\n# Test Case: {tc.name} (ID: {tc.id})\n"
             content += f"# State: {tc.state}, Modified: {tc.manually_modified}\n"
@@ -452,20 +454,40 @@ ${{DATABASE}}           {db_name}
             
             if tc.robot_code:
                 code = tc.robot_code
+                
+                # Extract Keywords section if present
+                if '*** Keywords ***' in code:
+                    kw_start = code.find('*** Keywords ***')
+                    kw_content = code[kw_start + len('*** Keywords ***'):]
+                    
+                    for section in ['*** Test Cases ***', '*** Variables ***', '*** Settings ***']:
+                        if section in kw_content:
+                            kw_content = kw_content.split(section)[0]
+                    
+                    if kw_content.strip():
+                        keywords_content += f"\n# Keywords from: {tc.name}\n"
+                        keywords_content += kw_content.strip() + "\n"
+                
+                # Extract Test Cases section
                 if '*** Test Cases ***' in code:
-                    parts = code.split('*** Test Cases ***')
-                    if len(parts) > 1:
-                        test_part = parts[1]
-                        for section in ['*** Keywords ***', '*** Variables ***', '*** Settings ***']:
-                            if section in test_part:
-                                test_part = test_part.split(section)[0]
-                        content += test_part.strip() + "\n\n"
+                    tc_start = code.find('*** Test Cases ***')
+                    test_part = code[tc_start + len('*** Test Cases ***'):]
+                    
+                    for section in ['*** Keywords ***', '*** Variables ***', '*** Settings ***']:
+                        if section in test_part:
+                            test_part = test_part.split(section)[0]
+                    
+                    content += test_part.strip() + "\n\n"
                 else:
                     content += code + "\n\n"
             else:
                 content += f"{tc.name}\n"
                 content += f"    [Documentation]    No robot code\n"
                 content += f"    Log    Test case has no robot code\n\n"
+        
+        # Add Keywords section at the end
+        if keywords_content:
+            content += "\n*** Keywords ***\n" + keywords_content
         
         return content
 

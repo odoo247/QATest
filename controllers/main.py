@@ -193,6 +193,7 @@ ${CURDATE}            %s
 """ % (base_url, db_name, username, password, datetime.now().strftime('%Y-%m-%d'))
         
         test_cases_content = "*** Test Cases ***\n"
+        keywords_content = ""
         
         for tc in run.test_case_ids:
             _logger.info(f"Processing test case: {tc.name} (ID: {tc.id})")
@@ -204,29 +205,48 @@ ${CURDATE}            %s
                 # Log first 200 chars of robot code for debugging
                 _logger.info(f"  robot_code preview: {tc.robot_code[:200]}...")
                 
-                # Extract just the test case part from robot_code
                 code = tc.robot_code
                 
-                # If it contains *** Test Cases ***, extract only that section
+                # Extract Keywords section if present (can be before or after Test Cases)
+                if '*** Keywords ***' in code:
+                    # Find the keywords section
+                    kw_start = code.find('*** Keywords ***')
+                    kw_content = code[kw_start + len('*** Keywords ***'):]
+                    
+                    # Stop at next section
+                    for section in ['*** Test Cases ***', '*** Variables ***', '*** Settings ***']:
+                        if section in kw_content:
+                            kw_content = kw_content.split(section)[0]
+                    
+                    if kw_content.strip():
+                        keywords_content += kw_content.strip() + "\n\n"
+                        _logger.info(f"  Extracted keywords: {len(kw_content)} chars")
+                
+                # Extract Test Cases section
                 if '*** Test Cases ***' in code:
-                    parts = code.split('*** Test Cases ***')
-                    if len(parts) > 1:
-                        # Get everything after *** Test Cases ***
-                        test_part = parts[1]
-                        # Stop at next section if any
-                        for section in ['*** Keywords ***', '*** Variables ***', '*** Settings ***']:
-                            if section in test_part:
-                                test_part = test_part.split(section)[0]
-                        test_cases_content += test_part.strip() + "\n\n"
+                    tc_start = code.find('*** Test Cases ***')
+                    test_part = code[tc_start + len('*** Test Cases ***'):]
+                    
+                    # Stop at next section (but Keywords might come after)
+                    for section in ['*** Keywords ***', '*** Variables ***', '*** Settings ***']:
+                        if section in test_part:
+                            test_part = test_part.split(section)[0]
+                    
+                    test_cases_content += test_part.strip() + "\n\n"
                 else:
-                    # Assume it's just test case content
+                    # Assume it's just test case content without headers
                     test_cases_content += f"\n{tc.name}\n"
                     test_cases_content += f"    [Documentation]    {tc.description or 'Auto-generated test'}\n"
                     test_cases_content += f"    [Tags]    {tc.test_id}\n"
-                    # Add a basic log if no robot code structure
                     test_cases_content += f"    Log    Running test: {tc.name}\n\n"
         
-        return settings + test_cases_content
+        # Combine: Settings + Test Cases + Keywords (Keywords go at end in Robot Framework)
+        result = settings + test_cases_content
+        if keywords_content:
+            result += "\n*** Keywords ***\n" + keywords_content
+            _logger.info(f"Added Keywords section: {len(keywords_content)} chars")
+        
+        return result
 
     # ==================== Customer API ====================
     
