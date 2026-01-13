@@ -336,7 +336,7 @@ Respond ONLY with the JSON object, no other text.
         }
 
     def action_rerun_tests(self):
-        """Create new test run with fixed tests"""
+        """Open Run Tests wizard with fixed tests for environment selection"""
         self.ensure_one()
         
         fixed_tests = self.line_ids.filtered('applied').mapped('test_case_id')
@@ -344,24 +344,18 @@ Respond ONLY with the JSON object, no other text.
         if not fixed_tests:
             raise UserError('No fixes have been applied yet.')
         
-        # Create new run
-        run = self.env['qa.test.run'].create({
-            'name': f"Rerun - {self.run_id.name}" if self.run_id else "Rerun Fixed Tests",
-            'customer_id': self.run_id.customer_id.id if self.run_id else False,
-            'server_id': self.run_id.server_id.id if self.run_id else False,
-            'suite_id': self.run_id.suite_id.id if self.run_id else False,
-            'test_case_ids': [(6, 0, fixed_tests.ids)],
-            'config_id': self.config_id.id,
-            'triggered_by': 'manual',
-        })
-        
+        # Open the Run Tests Wizard with the fixed tests pre-selected
         return {
-            'name': 'Test Run',
+            'name': 'Run Fixed Tests',
             'type': 'ir.actions.act_window',
-            'res_model': 'qa.test.run',
-            'res_id': run.id,
+            'res_model': 'qa.test.run.wizard',
             'view_mode': 'form',
-            'target': 'current',
+            'target': 'new',
+            'context': {
+                'default_test_case_ids': [(6, 0, fixed_tests.ids)],
+                'default_suite_id': self.run_id.suite_id.id if self.run_id and self.run_id.suite_id else False,
+                'default_customer_id': self.run_id.customer_id.id if self.run_id and self.run_id.customer_id else False,
+            },
         }
 
 
