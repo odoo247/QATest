@@ -223,7 +223,7 @@ Respond ONLY with the JSON object, no other text.
             from ..services.ai_generator import AIGenerator
             generator = AIGenerator(self.config_id)
             
-            response = generator._call_ai(prompt)
+            response = generator._call_api(prompt)
             
             # Parse JSON response
             # Try to extract JSON from response
