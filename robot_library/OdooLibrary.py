@@ -411,6 +411,96 @@ class OdooLibrary:
         """
         return datetime.now().strftime(format)
     
+    @keyword("Get Model Fields")
+    def get_model_fields(self, model, attributes=None):
+        """
+        Get field definitions for a model
+        
+        Args:
+            model: Model name (e.g., res.partner, sale.order)
+            attributes: List of field attributes to return (optional)
+                       Default: ['string', 'type', 'required', 'readonly']
+        
+        Returns:
+            Dictionary mapping field names to their definitions
+        
+        Example:
+            ${fields}=    Get Model Fields    sale.order.line
+            Log    ${fields['product_id']}
+        """
+        self._ensure_connected()
+        
+        if attributes is None:
+            attributes = ['string', 'type', 'required', 'readonly', 'relation']
+        
+        result = self._call(model, 'fields_get', [], {'attributes': attributes})
+        logger.info(f"Got {len(result)} fields for model {model}")
+        return result
+    
+    @keyword("Get Odoo Version")
+    def get_odoo_version(self):
+        """
+        Get Odoo server version
+        
+        Returns:
+            Version string (e.g., "17.0", "18.0", "19.0")
+        
+        Example:
+            ${version}=    Get Odoo Version
+            Log    Running on Odoo ${version}
+        """
+        info = self.get_server_info()
+        version = info.get('server_version', 'unknown')
+        logger.info(f"Odoo version: {version}")
+        return version
+    
+    @keyword("Get Valid Fields For Create")
+    def get_valid_fields_for_create(self, model):
+        """
+        Get list of fields that can be used when creating a record
+        (excludes readonly, computed fields)
+        
+        Args:
+            model: Model name
+        
+        Returns:
+            Dictionary with 'required' and 'optional' field lists
+        
+        Example:
+            ${fields}=    Get Valid Fields For Create    sale.order.line
+            Log    Required: ${fields['required']}
+            Log    Optional: ${fields['optional']}
+        """
+        all_fields = self.get_model_fields(model, ['type', 'required', 'readonly', 'string', 'relation'])
+        
+        required = []
+        optional = []
+        
+        # Skip these internal/computed fields
+        skip_fields = {'id', 'create_date', 'create_uid', 'write_date', 'write_uid', 
+                       '__last_update', 'display_name'}
+        
+        for name, info in all_fields.items():
+            if name in skip_fields:
+                continue
+            if info.get('readonly'):
+                continue
+            
+            field_info = {
+                'name': name,
+                'type': info.get('type'),
+                'string': info.get('string'),
+                'relation': info.get('relation'),
+            }
+            
+            if info.get('required'):
+                required.append(field_info)
+            else:
+                optional.append(field_info)
+        
+        logger.info(f"Model {model}: {len(required)} required, {len(optional)} optional fields")
+        return {'required': required, 'optional': optional}
+
     @keyword("Get Server Info")
     def get_server_info(self):
         """

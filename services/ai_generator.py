@@ -223,22 +223,36 @@ Test Create Sale Order
     
     # Now create the sale order with guaranteed data
     ${{order_vals}}=    Create Dictionary    partner_id=${{partner_id}}
-    ...    order_line=[(0, 0, {'product_id': ${{product_id}}, 'product_uom_qty': 1})]
-    ${{order_id}}=    Create Record    sale.order    &{order_vals}
+    ...    order_line=[(0, 0, {{'product_id': ${{product_id}}, 'product_uom_qty': 1}})]
+    ${{order_id}}=    Create Record    sale.order    &{{order_vals}}
     
-    [Teardown]    Cleanup Test Data    ${{order_id}}    ${{partner_id}}    ${{product_id}}
-```
-    
-*** Keywords ***
-Create Test Data
-    ${{TEST_PARTNER}}=    Create Record    res.partner    name=Test Partner
-    Set Suite Variable    ${{TEST_PARTNER}}
-    
-Delete Test Data
-    Run Keyword And Ignore Error    Delete Record    res.partner    ${{TEST_PARTNER}}
+    [Teardown]    Run Keywords
+    ...    Run Keyword And Ignore Error    Delete Record    sale.order    ${{order_id}}
+    ...    AND    Run Keyword And Ignore Error    Delete Record    res.partner    ${{partner_id}}
+    ...    AND    Run Keyword And Ignore Error    Delete Record    product.product    ${{product_id}}
 ```
 
-### Rule 10: Test Independence  
+### Rule 10: NO CUSTOM KEYWORDS
+Do NOT create *** Keywords *** sections. Put ALL logic directly in the test case.
+This makes tests self-contained and avoids "No keyword found" errors.
+
+BAD:
+```robot
+*** Keywords ***
+Create Test Partner
+    ${{id}}=    Create Record    res.partner    name=Test
+    Set Test Variable    ${{partner_id}}    ${{id}}
+```
+
+GOOD (inline everything):
+```robot
+*** Test Cases ***
+My Test
+    ${{partner_id}}=    Create Record    res.partner    name=Test Partner    is_company=${{True}}
+    # Use partner_id directly...
+```
+
+### Rule 11: Test Independence  
 Each test must be independent - don't rely on state from previous tests.
 
 ## TEST TYPES TO GENERATE
@@ -622,9 +636,13 @@ Tests run on different databases that may be empty. Always create test data:
 ${{partner_id}}=    Create Record    res.partner    name=QA Test Partner    is_company=${{True}}
 ${{product_id}}=    Create Record    product.product    name=QA Test Product    type=consu    list_price=100
 
-# Use the created data
+# Get product UOM for order line (REQUIRED for Odoo 17+)
+${{product_data}}=    Read Record    product.product    ${{product_id}}
+${{uom_id}}=    Set Variable    ${{product_data['uom_id'][0]}}
+
+# Use the created data - NOTE: product_uom_id NOT product_uom for Odoo 17+
 ${{order_vals}}=    Create Dictionary    partner_id=${{partner_id}}
-...    order_line=[(0, 0, {{'product_id': ${{product_id}}, 'product_uom_qty': 1}})]
+...    order_line=[(0, 0, {{'product_id': ${{product_id}}, 'product_uom_qty': 1, 'product_uom_id': ${{uom_id}}}})]
 ${{order_id}}=    Create Record    sale.order    &{{order_vals}}
 
 # Always cleanup in teardown
@@ -654,6 +672,32 @@ Each test must be independent - never rely on state from other tests.
 
 ### Rule 9: Check Field Existence Before Testing
 Not all fields exist in all Odoo versions. Use only documented/verified fields.
+
+### Rule 10: ODOO VERSION FIELD NAME DIFFERENCES (CRITICAL!)
+Field names changed between Odoo versions. ALWAYS use Odoo 17+ field names:
+
+| Model | OLD (Odoo <=16) | NEW (Odoo 17+) | Notes |
+|-------|-----------------|----------------|-------|
+| sale.order.line | product_uom | product_uom_id | REQUIRED - will error if wrong |
+| purchase.order.line | product_uom | product_uom_id | Same as sale.order.line |
+| account.move | invoice_line_ids | line_ids | For invoice lines |
+| stock.move | product_uom | product_uom_id | Check version |
+
+WRONG (causes "Invalid field 'product_uom'" error):
+```robot
+${{vals}}=    Create Dictionary    product_id=${{product_id}}    product_uom=${{uom_id}}
+```
+
+CORRECT (Odoo 17+):
+```robot
+${{vals}}=    Create Dictionary    product_id=${{product_id}}    product_uom_id=${{uom_id}}
+```
+
+### Rule 11: Type Handling
+- Many2one: Pass INTEGER, not string: `partner_id=${{partner_id}}`
+- One2many: Use tuples: `order_line=[(0, 0, {{...}})]`
+- Boolean: Use `${{True}}` or `${{False}}`, not strings
+- Wrong types cause "Wrong container value" errors
 
 ## REQUIREMENTS
 

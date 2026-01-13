@@ -181,10 +181,19 @@ class QAFixTestsWizard(models.TransientModel):
     def _analyze_test_with_ai(self, test_case, error_message):
         """Use AI to analyze test failure and suggest fix"""
         
-        prompt = f"""Analyze this failed Robot Framework test and provide a fix.
+        # Get Odoo version if available
+        odoo_version = 'unknown'
+        if self.run_id and self.run_id.server_id:
+            try:
+                odoo_version = self.run_id.server_id.get_odoo_version()
+            except:
+                pass
+        
+        prompt = f"""Analyze this failed Robot Framework test and provide a COMPLETE, SELF-CONTAINED fix.
 
 ## Test Case: {test_case.name}
 ## Test ID: {test_case.test_id}
+## Target Odoo Version: {odoo_version}
 
 ## Original Robot Code:
 ```robot
@@ -196,46 +205,84 @@ class QAFixTestsWizard(models.TransientModel):
 {error_message}
 ```
 
-## Your Task:
-1. Analyze why the test failed
-2. Provide the corrected Robot Framework code
-3. Explain what was wrong and how you fixed it
+## CRITICAL: ODOO VERSION FIELD NAME DIFFERENCES
 
-## Common Issues and Solutions:
+Many field names changed between Odoo versions. Use these CORRECT field names:
 
-### Data Not Found Issues:
-- "No saleable product found" / "No records found" → Create test data first OR use broader search
-- For products: Create a simple product if none exist, or search without filters first
-- For partners: Create a test partner or use broader domain
-- Always have a fallback: try to find any record, then create one if needed
+### sale.order.line fields:
+- Odoo 15-16: `product_uom` (Many2one to uom.uom)
+- Odoo 17+: `product_uom_id` (Many2one to uom.uom)
+- ALWAYS USE: `product_uom_id` for Odoo 17, 18, 19
 
-Example pattern for handling missing data:
+### Common field name changes:
+| Old (Odoo <=16) | New (Odoo 17+) | Model |
+|-----------------|----------------|-------|
+| product_uom | product_uom_id | sale.order.line, purchase.order.line |
+| invoice_line_ids | line_ids | account.move |
+| product_uom_id | uom_id | stock.move (sometimes) |
+
+### Type handling - CRITICAL:
+- Many2one fields: Pass INTEGER id, not string: `partner_id=${{partner_id}}` where partner_id is int
+- One2many fields: Use command tuples: `[(0, 0, {{...}})]`
+- DO NOT wrap integers in quotes
+
+### Example CORRECT sale.order.line creation (Odoo 17+):
 ```robot
-# Try to find existing record first
-${{ids}}=    Search Records    product.product    domain=[]    limit=1
-${{has_records}}=    Evaluate    len(${{ids}}) > 0
-Run Keyword If    not ${{has_records}}    Create Test Product
+# Get product UOM
+${{product_data}}=    Read Record    product.product    ${{product_id}}
+${{uom_id}}=    Set Variable    ${{product_data['uom_id'][0]}}
+
+# Create order - NOTE: product_uom_id NOT product_uom
+${{order_vals}}=    Create Dictionary
+...    partner_id=${{partner_id}}
+...    order_line=[(0, 0, {{'product_id': ${{product_id}}, 'product_uom_qty': 1, 'price_unit': 100.0, 'product_uom_id': ${{uom_id}}}})]
+${{order_id}}=    Create Record    sale.order    &{{order_vals}}
 ```
 
-### Other Common Issues:
-- `Should Not Be Empty` doesn't work on integers - use `Should Be True    ${{var}} > 0` instead
-- Field names may differ between Odoo versions
-- Validation tests should use `Run Keyword And Expect Error` to expect failures
-- Empty records can't be posted - need to add required data first
-- Some fields are computed/readonly and can't be set directly
+### Common RPC Errors and Fixes:
+| Error | Cause | Fix |
+|-------|-------|-----|
+| Invalid field 'product_uom' | Wrong field name | Use `product_uom_id` |
+| Wrong container value | Type mismatch | Ensure integers not strings |
+| bypass_access error | Internal Odoo error | Simplify the query, avoid complex nested operations |
+| field X is readonly | Can't set computed field | Remove that field from create/write |
 
-## Important Rules for Fixed Code:
-1. The fixed code must be COMPLETE - include ALL test case content from *** Test Cases *** to the end
-2. Create test data when it doesn't exist rather than failing
-3. Use defensive coding - check if records exist before using them
-4. Include proper cleanup in [Teardown]
+## STRUCTURE YOUR FIX:
+```robot
+*** Test Cases ***
+{test_case.name}
+    [Documentation]    Description
+    [Tags]    tags
+    
+    # 1. Create simple test data first (avoid complex nested creates)
+    ${{partner_id}}=    Create Record    res.partner    name=QA Test Partner
+    ${{product_id}}=    Create Record    product.product    name=QA Test Product    type=consu    list_price=100
+    
+    # 2. Get UOM from product (don't assume field names)
+    ${{product}}=    Read Record    product.product    ${{product_id}}
+    ${{uom_id}}=    Set Variable    ${{product['uom_id'][0]}}
+    
+    # 3. Create main record with CORRECT field names for Odoo 17+
+    ${{vals}}=    Create Dictionary
+    ...    partner_id=${{partner_id}}
+    ...    order_line=[(0, 0, {{'product_id': ${{product_id}}, 'product_uom_qty': 1, 'product_uom_id': ${{uom_id}}}})]
+    ${{order_id}}=    Create Record    sale.order    &{{vals}}
+    
+    # 4. Verify and cleanup
+    Should Be True    ${{order_id}} > 0
+    
+    [Teardown]    Run Keywords
+    ...    Run Keyword And Ignore Error    Delete Record    sale.order    ${{order_id}}
+    ...    AND    Run Keyword And Ignore Error    Delete Record    res.partner    ${{partner_id}}
+    ...    AND    Run Keyword And Ignore Error    Delete Record    product.product    ${{product_id}}
+```
 
 ## Response Format (JSON):
 {{
-    "analysis": "Brief explanation of what went wrong",
+    "analysis": "Brief explanation including which field names were wrong",
     "fix_type": "code_fix|skip_test|validation_test|manual_review",
     "confidence": "high|medium|low",
-    "fixed_code": "The complete corrected robot code for this test case - must include *** Test Cases *** header and full test"
+    "fixed_code": "COMPLETE robot code with CORRECT Odoo 17+ field names"
 }}
 
 Respond ONLY with the JSON object, no other text.

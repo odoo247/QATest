@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import logging
 from odoo import models, fields, api
 from odoo.exceptions import UserError
+
+_logger = logging.getLogger(__name__)
 
 
 class QACustomer(models.Model):
@@ -403,3 +406,152 @@ class QACustomerServer(models.Model):
             'domain': [('server_id', '=', self.id)],
             'context': {'default_server_id': self.id},
         }
+
+    def _rpc_call(self, model, method, args=None, kwargs=None):
+        """Make RPC call to target Odoo server"""
+        import requests
+        import json
+        
+        self.ensure_one()
+        
+        if not self.username or not self.password:
+            raise UserError("Username and password required to make RPC calls")
+        
+        # Authenticate first
+        auth_url = f"{self.url}/web/session/authenticate"
+        session = requests.Session()
+        
+        auth_response = session.post(
+            auth_url,
+            json={
+                "jsonrpc": "2.0",
+                "method": "call",
+                "params": {
+                    "db": self.database,
+                    "login": self.username,
+                    "password": self.password,
+                },
+                "id": 1
+            },
+            headers={'Content-Type': 'application/json'},
+            timeout=30
+        )
+        
+        auth_data = auth_response.json()
+        if auth_data.get('error'):
+            raise UserError(f"Authentication failed: {auth_data['error']}")
+        
+        uid = auth_data.get('result', {}).get('uid')
+        if not uid:
+            raise UserError("Authentication failed: Invalid credentials")
+        
+        # Make the RPC call
+        call_url = f"{self.url}/web/dataset/call_kw/{model}/{method}"
+        
+        response = session.post(
+            call_url,
+            json={
+                "jsonrpc": "2.0",
+                "method": "call",
+                "params": {
+                    "model": model,
+                    "method": method,
+                    "args": args or [],
+                    "kwargs": kwargs or {},
+                },
+                "id": 2
+            },
+            headers={'Content-Type': 'application/json'},
+            timeout=60
+        )
+        
+        result = response.json()
+        if result.get('error'):
+            error_msg = result['error'].get('data', {}).get('message', str(result['error']))
+            raise UserError(f"RPC Error: {error_msg}")
+        
+        return result.get('result')
+
+    def get_odoo_version(self):
+        """Get Odoo version from target server"""
+        import requests
+        
+        self.ensure_one()
+        
+        try:
+            version_url = f"{self.url}/web/webclient/version_info"
+            response = requests.post(
+                version_url,
+                json={"jsonrpc": "2.0", "method": "call", "params": {}, "id": 1},
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('result', {}).get('server_version', 'unknown')
+        except Exception as e:
+            _logger.warning(f"Could not get Odoo version: {e}")
+        
+        return 'unknown'
+
+    def get_model_fields(self, model_name):
+        """
+        Get field definitions from target Odoo server
+        
+        Args:
+            model_name: Model technical name (e.g., 'sale.order.line')
+        
+        Returns:
+            Dictionary mapping field names to their definitions
+        """
+        try:
+            result = self._rpc_call(
+                model_name, 
+                'fields_get', 
+                [], 
+                {'attributes': ['string', 'type', 'required', 'readonly', 'relation', 'help']}
+            )
+            return result or {}
+        except Exception as e:
+            _logger.warning(f"Could not get fields for {model_name}: {e}")
+            return {}
+
+    def get_valid_create_fields(self, model_name):
+        """
+        Get list of fields valid for creating records
+        (excludes readonly/computed fields)
+        
+        Returns:
+            {
+                'required': [{'name': 'field', 'type': 'char', 'string': 'Field'}],
+                'optional': [...]
+            }
+        """
+        all_fields = self.get_model_fields(model_name)
+        
+        skip_fields = {'id', 'create_date', 'create_uid', 'write_date', 'write_uid', 
+                       '__last_update', 'display_name', 'name_get'}
+        
+        required = []
+        optional = []
+        
+        for name, info in all_fields.items():
+            if name in skip_fields:
+                continue
+            if info.get('readonly'):
+                continue
+            
+            field_info = {
+                'name': name,
+                'type': info.get('type'),
+                'string': info.get('string'),
+                'relation': info.get('relation'),
+            }
+            
+            if info.get('required'):
+                required.append(field_info)
+            else:
+                optional.append(field_info)
+        
+        return {'required': required, 'optional': optional}
