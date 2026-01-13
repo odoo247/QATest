@@ -198,6 +198,36 @@ Test Something
     [Setup]    Create Test Data
     [Teardown]    Delete Test Data
     # test steps
+
+### Rule 10: Handle Missing Data (VERY IMPORTANT!)
+Tests run on different databases that may not have data. Always create test data:
+```robot
+# DON'T rely on existing data existing:
+${{product_ids}}=    Search Records    product.product    domain=[('sale_ok','=',True)]    limit=1
+Should Be True    len(${{product_ids}}) > 0    msg=No saleable product found  # WILL FAIL on empty DB!
+
+# DO create data if it doesn't exist:
+${{product_ids}}=    Search Records    product.product    domain=[]    limit=1
+${{has_product}}=    Evaluate    len(${{product_ids}}) > 0
+Run Keyword If    not ${{has_product}}    Create Test Product
+${{product_ids}}=    Search Records    product.product    domain=[]    limit=1
+${{product_id}}=    Set Variable    ${{product_ids[0]}}
+```
+
+OR use a simpler pattern - always create test data at start:
+```robot
+Test Create Sale Order
+    # Create test data first
+    ${{partner_id}}=    Create Record    res.partner    name=Test Customer    is_company=${True}
+    ${{product_id}}=    Create Record    product.product    name=Test Product    type=consu    list_price=100
+    
+    # Now create the sale order with guaranteed data
+    ${{order_vals}}=    Create Dictionary    partner_id=${{partner_id}}
+    ...    order_line=[(0, 0, {'product_id': ${{product_id}}, 'product_uom_qty': 1})]
+    ${{order_id}}=    Create Record    sale.order    &{order_vals}
+    
+    [Teardown]    Cleanup Test Data    ${{order_id}}    ${{partner_id}}    ${{product_id}}
+```
     
 *** Keywords ***
 Create Test Data
@@ -583,6 +613,25 @@ Should Be True    ${{data['amount']}} > 0
 ${{partner_ids}}=    Search Records    res.partner    domain=[('is_company','=',True)]    limit=1
 Should Be True    len(${{partner_ids}}) > 0    msg=No partner found
 ${{partner_id}}=    Set Variable    ${{partner_ids[0]}}
+```
+
+### Rule 5b: Create Test Data (CRITICAL!)
+Tests run on different databases that may be empty. Always create test data:
+```robot
+# Create required test data at the start of each test
+${{partner_id}}=    Create Record    res.partner    name=QA Test Partner    is_company=${{True}}
+${{product_id}}=    Create Record    product.product    name=QA Test Product    type=consu    list_price=100
+
+# Use the created data
+${{order_vals}}=    Create Dictionary    partner_id=${{partner_id}}
+...    order_line=[(0, 0, {{'product_id': ${{product_id}}, 'product_uom_qty': 1}})]
+${{order_id}}=    Create Record    sale.order    &{{order_vals}}
+
+# Always cleanup in teardown
+[Teardown]    Run Keywords    
+...    Run Keyword And Ignore Error    Delete Record    sale.order    ${{order_id}}
+...    AND    Run Keyword And Ignore Error    Delete Record    res.partner    ${{partner_id}}
+...    AND    Run Keyword And Ignore Error    Delete Record    product.product    ${{product_id}}
 ```
 
 ### Rule 6: Calling Methods Without Keyword Conflict

@@ -495,23 +495,55 @@ class QATestRun(models.Model):
             robot_report = client.get_test_report(job_name, self.jenkins_build_number)
             
             if robot_report:
-                results['total'] = robot_report.get('overallTotal', 0)
-                results['passed'] = robot_report.get('overallPassed', 0)
-                results['failed'] = robot_report.get('overallFailed', 0)
+                _logger.info(f"Robot report received: {list(robot_report.keys())}")
                 
+                # Try different field name variations
+                results['total'] = robot_report.get('overallTotal', robot_report.get('totalCount', 0))
+                results['passed'] = robot_report.get('overallPassed', robot_report.get('passCount', 0))
+                results['failed'] = robot_report.get('overallFailed', robot_report.get('failCount', 0))
+                
+                # Process suites and cases
                 for suite in robot_report.get('suites', []):
+                    _logger.info(f"Processing suite: {suite.get('name', 'unknown')}")
+                    
                     for case in suite.get('cases', []):
+                        # Try different field names for error message
+                        error_msg = (
+                            case.get('errorMsg') or 
+                            case.get('message') or 
+                            case.get('errorDetails') or 
+                            case.get('errorStackTrace') or
+                            ''
+                        )
+                        
+                        # Also check for stdout/stderr which might contain error details
+                        if not error_msg:
+                            error_msg = case.get('stdout', '') or case.get('stderr', '')
+                        
+                        test_name = case.get('name', 'Unknown Test')
+                        status = 'passed' if case.get('status') == 'PASS' else 'failed'
+                        
+                        _logger.info(f"Test: {test_name}, status: {status}, msg: {error_msg[:100] if error_msg else 'none'}")
+                        
                         results['details'].append({
-                            'name': case.get('name'),
-                            'status': 'passed' if case.get('status') == 'PASS' else 'failed',
+                            'name': test_name,
+                            'status': status,
                             'duration': case.get('duration', 0) / 1000,
-                            'message': case.get('errorMsg', ''),
+                            'message': error_msg[:2000] if error_msg else '',
                         })
+                
+                # If no details from API, try parsing log
+                if results['total'] > 0 and not results['details']:
+                    _logger.info("No test details in robot report, falling back to log parsing")
+                    results = self._parse_results_from_log(client, job_name)
             else:
+                _logger.info("No robot report available, parsing log instead")
                 results = self._parse_results_from_log(client, job_name)
                 
         except Exception as e:
             _logger.warning(f"Could not fetch Robot results: {e}")
+            # Fallback to log parsing
+            results = self._parse_results_from_log(client, job_name)
         
         return results
     
@@ -540,57 +572,91 @@ class QATestRun(models.Model):
                     _logger.info(f"Found totals: {results['total']} tests, {results['passed']} passed, {results['failed']} failed")
                     break
             
-            # Multiple patterns to find individual test results
-            # Robot Framework format: "Test Name    | PASS |" or "Test Name :: description    | FAIL | error message"
-            test_patterns = [
-                # Pattern 1: "Test Name :: Description    | PASS/FAIL |"
-                r'^([A-Z][A-Za-z0-9_ ]+(?:\s+[A-Za-z0-9_]+)*)\s*(?:::\s*[^|]*)?\s*\|\s*(PASS|FAIL)\s*\|(.*)$',
-                # Pattern 2: "Test Name    | PASS/FAIL | duration"
-                r'^([A-Z][A-Za-z0-9_ ]+)\s+\|\s*(PASS|FAIL)\s*\|(.*)$',
-                # Pattern 3: Lines starting with test keywords
-                r'^\*\*\*\s*Test[:\s]+([^\|]+?)\s*\*\*\*.*?(PASS|FAIL)',
-            ]
+            # Robot Framework output format:
+            # Test Name :: Description    | PASS |
+            # Test Name :: Description    | FAIL |
+            # Error message on next line
+            # ------------------------------
             
+            lines = log.split('\n')
             seen_tests = set()
-            for line in log.split('\n'):
-                line = line.strip()
+            
+            # Pattern to match test result lines
+            test_result_pattern = re.compile(
+                r'^([A-Z][A-Za-z0-9_ ]+(?:\s+[A-Za-z0-9_]+)*)\s*(?:::\s*[^|]*)?\s*\|\s*(PASS|FAIL)\s*\|(.*)$',
+                re.IGNORECASE
+            )
+            
+            i = 0
+            while i < len(lines):
+                line = lines[i].strip()
+                i += 1
+                
                 if not line:
                     continue
+                
+                match = test_result_pattern.match(line)
+                if match:
+                    test_name = match.group(1).strip()
+                    status_str = match.group(2).upper()
+                    same_line_msg = match.group(3).strip() if match.group(3) else ''
                     
-                for pattern in test_patterns:
-                    match = re.match(pattern, line, re.IGNORECASE)
-                    if match:
-                        test_name = match.group(1).strip()
-                        status_str = match.group(2).upper()
-                        message = match.group(3).strip() if len(match.groups()) > 2 else ''
+                    # Clean up test name
+                    test_name = re.sub(r'^[\s\-=_\.]+', '', test_name)
+                    test_name = re.sub(r'[\s\-=_\.]+$', '', test_name)
+                    test_name = test_name.strip()
+                    
+                    if not test_name:
+                        continue
+                    
+                    # Skip suite-level and internal results
+                    skip_names = ['tests', 'smoke test', 'tests.smoke test', 'test suites', 
+                                 'output', 'log', 'report', 'downloaded tests']
+                    if test_name.lower() in skip_names:
+                        continue
+                    if test_name.startswith('Tests.') or '.' in test_name:
+                        continue
+                    if test_name in seen_tests:
+                        continue
+                    
+                    # For FAIL, capture error message from following lines
+                    error_message = same_line_msg.strip('| \t-')
+                    
+                    if status_str == 'FAIL' and not error_message:
+                        # Look at next lines for error message (until we hit a separator or another test)
+                        error_lines = []
+                        while i < len(lines):
+                            next_line = lines[i].strip()
+                            # Stop at separator lines or empty lines after content
+                            if next_line.startswith('---') or next_line.startswith('==='):
+                                break
+                            # Stop if we hit another test result
+                            if test_result_pattern.match(next_line):
+                                break
+                            # Skip empty lines at start
+                            if not next_line and not error_lines:
+                                i += 1
+                                continue
+                            # Stop at empty line after we have content
+                            if not next_line and error_lines:
+                                break
+                            # Capture the error message
+                            error_lines.append(next_line)
+                            i += 1
+                            # Limit to 5 lines of error
+                            if len(error_lines) >= 5:
+                                break
                         
-                        # Clean up test name - remove leading/trailing dashes, equals, spaces
-                        test_name = re.sub(r'^[\s\-=_\.]+', '', test_name)  # Leading
-                        test_name = re.sub(r'[\s\-=_\.]+$', '', test_name)  # Trailing
-                        test_name = test_name.strip()
-                        
-                        if not test_name:
-                            continue
-                        
-                        # Skip suite-level and internal results
-                        skip_names = ['tests', 'smoke test', 'tests.smoke test', 'test suites', 
-                                     'output', 'log', 'report', 'downloaded tests']
-                        if test_name.lower() in skip_names:
-                            continue
-                        if test_name.startswith('Tests.') or '.' in test_name:
-                            continue
-                        if test_name in seen_tests:
-                            continue
-                            
-                        seen_tests.add(test_name)
-                        results['details'].append({
-                            'name': test_name,
-                            'status': 'passed' if status_str == 'PASS' else 'failed',
-                            'duration': 0,
-                            'message': message.strip('| \t-'),
-                        })
-                        _logger.info(f"Found test: '{test_name}' = {status_str}, msg='{message[:50] if message else ''}'")
-                        break
+                        error_message = '\n'.join(error_lines).strip()
+                    
+                    seen_tests.add(test_name)
+                    results['details'].append({
+                        'name': test_name,
+                        'status': 'passed' if status_str == 'PASS' else 'failed',
+                        'duration': 0,
+                        'message': error_message[:2000] if error_message else '',
+                    })
+                    _logger.info(f"Found test: '{test_name}' = {status_str}, msg='{error_message[:100] if error_message else ''}'")
             
             _logger.info(f"Parsed {len(results['details'])} test details from log")
             

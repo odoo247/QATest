@@ -72,36 +72,31 @@
         <field name="arch" type="xml">
             <list editable="bottom" decoration-success="applied" decoration-muted="not selected">
                 <field name="selected" widget="boolean_toggle"/>
-                <field name="test_id"/>
                 <field name="test_name"/>
+                <field name="error_message" string="Error" widget="text" optional="show"/>
+                <field name="analysis" string="AI Analysis"/>
                 <field name="fix_type" widget="badge"/>
                 <field name="confidence" widget="badge"/>
-                <field name="analysis"/>
                 <field name="applied" readonly="1"/>
+                <button name="action_view_diff" type="object"
+                        string="View Details" icon="fa-eye"/>
                 <button name="action_apply_fix" type="object" 
                         string="Apply" icon="fa-check"
                         invisible="applied or not suggested_fix"/>
-                <button name="action_edit_fix" type="object"
-                        string="Edit" icon="fa-pencil"
-                        invisible="applied"/>
-                <button name="action_skip_test" type="object"
-                        string="Skip" icon="fa-ban"
-                        invisible="applied"/>
             </list>
         </field>
     </record>
     
-    <!-- Fix Tests Wizard Line Form (for editing) -->
+    <!-- Fix Tests Wizard Line Form (for editing/viewing details) -->
     <record id="view_qa_fix_tests_wizard_line_form" model="ir.ui.view">
         <field name="name">qa.fix.tests.wizard.line.form</field>
         <field name="model">qa.fix.tests.wizard.line</field>
         <field name="arch" type="xml">
-            <form string="Edit Test Fix">
+            <form string="Test Fix Details">
                 <sheet>
                     <group>
                         <group>
-                            <field name="test_id"/>
-                            <field name="test_name"/>
+                            <field name="test_name" readonly="1"/>
                             <field name="fix_type"/>
                             <field name="confidence"/>
                         </group>
@@ -111,21 +106,29 @@
                         </group>
                     </group>
                     
+                    <!-- Error Message - prominently displayed -->
+                    <group string="Error Message" invisible="not error_message">
+                        <div class="alert alert-danger" style="white-space: pre-wrap;">
+                            <field name="error_message" nolabel="1" readonly="1"/>
+                        </div>
+                    </group>
+                    
+                    <!-- AI Analysis -->
+                    <group string="AI Analysis" invisible="not analysis">
+                        <div class="alert alert-info" style="white-space: pre-wrap;">
+                            <field name="analysis" nolabel="1" readonly="1"/>
+                        </div>
+                    </group>
+                    
                     <notebook>
-                        <page string="Error" name="error">
-                            <field name="error_message" readonly="1"/>
-                        </page>
-                        <page string="Analysis" name="analysis">
-                            <field name="analysis" readonly="1"/>
-                        </page>
                         <page string="Original Code" name="original">
-                            <field name="original_code" readonly="1"/>
+                            <field name="original_code" readonly="1" widget="ace" options="{'mode': 'robot'}"/>
                         </page>
                         <page string="Suggested Fix" name="suggested">
-                            <field name="suggested_fix" readonly="1"/>
+                            <field name="suggested_fix" readonly="1" widget="ace" options="{'mode': 'robot'}"/>
                         </page>
-                        <page string="Edit Fix" name="edit">
-                            <field name="edited_fix" 
+                        <page string="Edit Fix" name="edit" invisible="applied">
+                            <field name="edited_fix" widget="ace" options="{'mode': 'robot'}"
                                    placeholder="Edit the suggested fix here before applying..."/>
                         </page>
                     </notebook>
@@ -133,6 +136,9 @@
                 <footer>
                     <button name="action_apply_fix" type="object" 
                             string="Apply Fix" class="btn-primary"
+                            invisible="applied"/>
+                    <button name="action_skip_test" type="object"
+                            string="Skip Test" class="btn-warning"
                             invisible="applied"/>
                     <button string="Close" class="btn-secondary" special="cancel"/>
                 </footer>

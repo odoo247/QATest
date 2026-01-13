@@ -201,19 +201,41 @@ class QAFixTestsWizard(models.TransientModel):
 2. Provide the corrected Robot Framework code
 3. Explain what was wrong and how you fixed it
 
-## Common Issues to Check:
+## Common Issues and Solutions:
+
+### Data Not Found Issues:
+- "No saleable product found" / "No records found" → Create test data first OR use broader search
+- For products: Create a simple product if none exist, or search without filters first
+- For partners: Create a test partner or use broader domain
+- Always have a fallback: try to find any record, then create one if needed
+
+Example pattern for handling missing data:
+```robot
+# Try to find existing record first
+${{ids}}=    Search Records    product.product    domain=[]    limit=1
+${{has_records}}=    Evaluate    len(${{ids}}) > 0
+Run Keyword If    not ${{has_records}}    Create Test Product
+```
+
+### Other Common Issues:
 - `Should Not Be Empty` doesn't work on integers - use `Should Be True    ${{var}} > 0` instead
 - Field names may differ between Odoo versions
 - Validation tests should use `Run Keyword And Expect Error` to expect failures
 - Empty records can't be posted - need to add required data first
 - Some fields are computed/readonly and can't be set directly
 
+## Important Rules for Fixed Code:
+1. The fixed code must be COMPLETE - include ALL test case content from *** Test Cases *** to the end
+2. Create test data when it doesn't exist rather than failing
+3. Use defensive coding - check if records exist before using them
+4. Include proper cleanup in [Teardown]
+
 ## Response Format (JSON):
 {{
     "analysis": "Brief explanation of what went wrong",
     "fix_type": "code_fix|skip_test|validation_test|manual_review",
     "confidence": "high|medium|low",
-    "fixed_code": "The complete corrected robot code for this test case"
+    "fixed_code": "The complete corrected robot code for this test case - must include *** Test Cases *** header and full test"
 }}
 
 Respond ONLY with the JSON object, no other text.
