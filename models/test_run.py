@@ -331,29 +331,39 @@ class QATestRun(models.Model):
         }
 
     def action_rerun_failed(self):
-        """Re-run only failed tests"""
+        """Re-run only failed tests - opens wizard to select environment"""
         self.ensure_one()
+        
+        # Get failed test cases from results that have test_case_id linked
         failed_tests = self.result_ids.filtered(
-            lambda r: r.status in ['failed', 'error']
+            lambda r: r.status in ['failed', 'error'] and r.test_case_id
         ).mapped('test_case_id')
         
-        if not failed_tests:
-            raise UserError('No failed tests to re-run.')
+        # Also include test cases from this run that are in failed state
+        failed_from_run = self.test_case_ids.filtered(
+            lambda tc: tc.state in ['failed', 'error']
+        )
         
-        new_run = self.create({
-            'name': f"Re-run: {self.name}",
-            'suite_id': self.suite_id.id,
-            'test_case_ids': [(6, 0, failed_tests.ids)],
-            'config_id': self.config_id.id,
-            'environment': self.environment,
-        })
+        all_failed = failed_tests | failed_from_run
         
+        if not all_failed:
+            raise UserError('No failed tests to re-run. Make sure test results are linked to test cases.')
+        
+        # Open the Run Tests Wizard with failed tests pre-selected
         return {
             'name': 'Re-run Failed Tests',
             'type': 'ir.actions.act_window',
-            'res_model': 'qa.test.run',
+            'res_model': 'qa.test.run.wizard',
             'view_mode': 'form',
-            'res_id': new_run.id,
+            'target': 'new',
+            'context': {
+                'default_name': f"Re-run: {self.name}",
+                'default_test_case_ids': [(6, 0, all_failed.ids)],
+                'default_suite_id': self.suite_id.id if self.suite_id else False,
+                'default_customer_id': self.customer_id.id if self.customer_id else False,
+                'default_server_id': self.server_id.id if self.server_id else False,
+                'default_config_id': self.config_id.id if self.config_id else False,
+            },
         }
 
     def action_generate_report(self):
