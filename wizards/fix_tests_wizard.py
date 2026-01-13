@@ -56,11 +56,27 @@ class QAFixTestsWizard(models.TransientModel):
     @api.onchange('source_type', 'run_id')
     def _onchange_source(self):
         if self.source_type == 'run' and self.run_id:
-            # Get failed test cases from run
+            # Get failed results from run
             failed_results = self.run_id.result_ids.filtered(
                 lambda r: r.status in ('failed', 'error')
             )
-            self.test_case_ids = failed_results.mapped('test_case_id')
+            _logger.info(f"Found {len(failed_results)} failed results in run {self.run_id.id}")
+            
+            # Get test cases from linked results
+            linked_test_cases = failed_results.filtered('test_case_id').mapped('test_case_id')
+            _logger.info(f"Found {len(linked_test_cases)} linked test cases")
+            
+            # Also include test cases from the run itself that are in failed state
+            run_failed_cases = self.run_id.test_case_ids.filtered(
+                lambda tc: tc.state in ('failed', 'error')
+            )
+            _logger.info(f"Found {len(run_failed_cases)} failed test cases in run")
+            
+            # Combine both
+            all_failed = linked_test_cases | run_failed_cases
+            self.test_case_ids = all_failed
+            
+            _logger.info(f"Total test cases for fixing: {len(self.test_case_ids)}")
 
     def action_analyze(self):
         """Analyze failed tests and generate fixes using AI"""
@@ -69,8 +85,12 @@ class QAFixTestsWizard(models.TransientModel):
         if not self.config_id:
             raise UserError('Please configure AI settings first.')
         
+        # Refresh test_case_ids from source
+        if self.source_type == 'run' and self.run_id:
+            self._onchange_source()
+        
         if not self.test_case_ids:
-            raise UserError('No failed test cases selected.')
+            raise UserError('No failed test cases found. Make sure the test results are linked to test cases, or select test cases manually.')
         
         self.state = 'analyzing'
         self.total_count = len(self.test_case_ids)
@@ -83,16 +103,35 @@ class QAFixTestsWizard(models.TransientModel):
         
         for test_case in self.test_case_ids:
             try:
+                _logger.info(f"Analyzing test case: {test_case.name} (ID: {test_case.id})")
+                
                 # Get last error message
                 error_message = test_case.last_error_message or ''
                 
                 # If we have a run, get the specific result
                 if self.run_id:
                     result = self.run_id.result_ids.filtered(
-                        lambda r: r.test_case_id == test_case
+                        lambda r: r.test_case_id.id == test_case.id
                     )[:1]
                     if result:
                         error_message = result.message or error_message
+                
+                robot_code = test_case.robot_code or ''
+                
+                if not robot_code:
+                    _logger.warning(f"Test case {test_case.name} has no robot_code")
+                    lines_data.append({
+                        'wizard_id': self.id,
+                        'test_case_id': test_case.id,
+                        'original_code': '',
+                        'error_message': error_message[:2000] if error_message else 'No error message',
+                        'analysis': 'Test case has no Robot Framework code. Generate code first or write it manually.',
+                        'suggested_fix': '',
+                        'fix_type': 'manual_review',
+                        'confidence': 'low',
+                    })
+                    self.analyzed_count += 1
+                    continue
                 
                 # Analyze with AI
                 analysis = self._analyze_test_with_ai(test_case, error_message)
@@ -100,7 +139,7 @@ class QAFixTestsWizard(models.TransientModel):
                 lines_data.append({
                     'wizard_id': self.id,
                     'test_case_id': test_case.id,
-                    'original_code': test_case.robot_code,
+                    'original_code': robot_code,
                     'error_message': error_message[:2000] if error_message else '',
                     'analysis': analysis.get('analysis', ''),
                     'suggested_fix': analysis.get('fixed_code', ''),
@@ -109,13 +148,14 @@ class QAFixTestsWizard(models.TransientModel):
                 })
                 
                 self.analyzed_count += 1
+                _logger.info(f"Analysis complete for {test_case.name}: {analysis.get('fix_type')}")
                 
             except Exception as e:
                 _logger.error(f"Error analyzing test {test_case.name}: {e}")
                 lines_data.append({
                     'wizard_id': self.id,
                     'test_case_id': test_case.id,
-                    'original_code': test_case.robot_code,
+                    'original_code': test_case.robot_code or '',
                     'error_message': str(e),
                     'analysis': f'Analysis failed: {str(e)}',
                     'suggested_fix': '',
@@ -124,7 +164,9 @@ class QAFixTestsWizard(models.TransientModel):
                 })
         
         # Create all lines
-        self.env['qa.fix.tests.wizard.line'].create(lines_data)
+        if lines_data:
+            self.env['qa.fix.tests.wizard.line'].create(lines_data)
+            _logger.info(f"Created {len(lines_data)} wizard lines")
         
         self.state = 'review'
         
@@ -219,18 +261,62 @@ Respond ONLY with the JSON object, no other text.
         """Apply all suggested fixes"""
         self.ensure_one()
         
-        for line in self.line_ids.filtered(lambda l: l.suggested_fix and not l.applied):
-            line.action_apply_fix()
+        _logger.info(f"action_apply_all: Total lines: {len(self.line_ids)}")
+        
+        applicable_lines = self.line_ids.filtered(lambda l: l.suggested_fix and not l.applied)
+        _logger.info(f"action_apply_all: Applicable lines: {len(applicable_lines)}")
+        
+        if not applicable_lines:
+            # Check why no lines are applicable
+            all_lines = self.line_ids
+            already_applied = all_lines.filtered('applied')
+            no_fix = all_lines.filtered(lambda l: not l.suggested_fix)
+            
+            msg_parts = []
+            if not all_lines:
+                msg_parts.append("No test analyses found. Click 'Analyze with AI' first.")
+            else:
+                if already_applied:
+                    msg_parts.append(f"{len(already_applied)} already applied")
+                if no_fix:
+                    msg_parts.append(f"{len(no_fix)} have no suggested fix")
+            
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'No Fixes to Apply',
+                    'message': ' | '.join(msg_parts) if msg_parts else 'No fixes available.',
+                    'type': 'warning',
+                    'sticky': True,
+                }
+            }
+        
+        applied_count = 0
+        errors = []
+        
+        for line in applicable_lines:
+            try:
+                line.action_apply_fix()
+                applied_count += 1
+            except Exception as e:
+                errors.append(f"{line.test_name}: {str(e)}")
+                _logger.error(f"Failed to apply fix for {line.test_name}: {e}")
         
         self.state = 'done'
+        
+        message = f'{applied_count} test cases updated.'
+        if errors:
+            message += f' {len(errors)} failed: ' + ', '.join(errors[:3])
         
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': 'Fixes Applied',
-                'message': f'{self.fixed_count} test cases updated.',
-                'type': 'success',
+                'message': message,
+                'type': 'success' if not errors else 'warning',
+                'sticky': bool(errors),
             }
         }
 
@@ -320,22 +406,29 @@ class QAFixTestsWizardLine(models.TransientModel):
         fix_code = self.edited_fix or self.suggested_fix
         
         if not fix_code:
-            raise UserError('No fix code available.')
+            _logger.warning(f"No fix code for {self.test_name}")
+            return False
+        
+        if not self.test_case_id:
+            raise UserError('No test case linked to this fix.')
+        
+        _logger.info(f"Applying fix to test case {self.test_case_id.name}, fix_type={self.fix_type}")
         
         if self.fix_type == 'skip_test':
             self.test_case_id.write({
                 'state': 'skipped',
-                'modification_notes': f"Skipped by AI Fix Wizard: {self.analysis}",
+                'modification_notes': f"Skipped by AI Fix Wizard: {self.analysis[:500] if self.analysis else 'No analysis'}",
             })
         else:
             self.test_case_id.write({
                 'robot_code': fix_code,
                 'state': 'ready',
                 'manually_modified': True,
-                'modification_notes': f"AI Fix Applied: {self.analysis}",
+                'modification_notes': f"AI Fix Applied: {self.analysis[:500] if self.analysis else 'No analysis'}",
             })
         
         self.applied = True
+        _logger.info(f"Fix applied successfully to {self.test_case_id.name}")
         
         return True
 
