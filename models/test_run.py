@@ -17,6 +17,9 @@ class QATestRun(models.Model):
     name = fields.Char(string='Run Name', required=True, default=lambda self: self._default_name())
     active = fields.Boolean(default=True)
     
+    # Robot code preview for debugging
+    robot_code_preview = fields.Text(string='Robot Code Preview', compute='_compute_robot_code_preview')
+    
     # Customer & Server
     customer_id = fields.Many2one('qa.customer', string='Customer',
                                    ondelete='cascade',
@@ -119,6 +122,17 @@ class QATestRun(models.Model):
                 run.base_url = run.config_id.test_base_url
             else:
                 run.base_url = False
+
+    @api.depends('test_case_ids', 'test_case_ids.robot_code', 'server_id')
+    def _compute_robot_code_preview(self):
+        """Generate preview of robot code that will be sent to Jenkins"""
+        for run in self:
+            if not run.test_case_ids:
+                run.robot_code_preview = "No test cases selected"
+                continue
+            
+            base_url = run.target_url or (run.server_id.url if run.server_id else 'http://localhost:8069')
+            run.robot_code_preview = run._generate_preview_robot_content(base_url)
 
     @api.depends('start_time', 'end_time')
     def _compute_duration(self):
@@ -349,6 +363,15 @@ class QATestRun(models.Model):
         if not all_failed:
             raise UserError('No failed tests to re-run. Make sure test results are linked to test cases.')
         
+        # Log what we're rerunning for debugging
+        _logger.info(f"Re-running {len(all_failed)} failed tests:")
+        for tc in all_failed:
+            _logger.info(f"  - {tc.name} (ID: {tc.id})")
+            _logger.info(f"    State: {tc.state}, Modified: {tc.manually_modified}")
+            _logger.info(f"    Robot code length: {len(tc.robot_code) if tc.robot_code else 0}")
+            if tc.robot_code:
+                _logger.info(f"    Code preview: {tc.robot_code[:150]}...")
+        
         # Open the Run Tests Wizard with failed tests pre-selected
         return {
             'name': 'Re-run Failed Tests',
@@ -357,6 +380,7 @@ class QATestRun(models.Model):
             'view_mode': 'form',
             'target': 'new',
             'context': {
+                'rerun_mode': True,  # Flag to prevent clearing pre-selected tests
                 'default_name': f"Re-run: {self.name}",
                 'default_test_case_ids': [(6, 0, all_failed.ids)],
                 'default_suite_id': self.suite_id.id if self.suite_id else False,
@@ -371,6 +395,79 @@ class QATestRun(models.Model):
         self.ensure_one()
         # TODO: Implement detailed HTML report generation
         pass
+
+    def action_preview_robot_code(self):
+        """Preview the robot code that will be sent to Jenkins"""
+        self.ensure_one()
+        
+        # Generate the combined robot file just like the controller does
+        from ..controllers.main import QATestController
+        controller = QATestController()
+        
+        # Build the robot content
+        server = self.server_id
+        base_url = self.target_url or (server.url if server else 'http://localhost:8069')
+        
+        robot_content = self._generate_preview_robot_content(base_url)
+        
+        # Show in a popup
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Robot Code Preview',
+            'res_model': 'qa.test.run',
+            'view_mode': 'form',
+            'res_id': self.id,
+            'target': 'new',
+            'views': [(self.env.ref('qa_test_generator.view_qa_test_run_preview_form').id, 'form')],
+            'context': {'preview_content': robot_content},
+        }
+    
+    def _generate_preview_robot_content(self, base_url):
+        """Generate robot content for preview"""
+        server = self.server_id
+        db_name = server.database if server else 'odoo'
+        username = server.username if server else 'admin'
+        password = server.password if server else 'admin'
+        
+        content = f"""*** Settings ***
+Library    SeleniumLibrary
+Library    Collections
+Library    String
+Library    OdooLibrary    {base_url}    {db_name}    {username}    {password}
+
+Suite Setup       Connect To Odoo
+Suite Teardown    Disconnect From Odoo
+
+*** Variables ***
+${{BASE_URL}}           {base_url}
+${{DATABASE}}           {db_name}
+
+*** Test Cases ***
+"""
+        
+        for tc in self.test_case_ids:
+            content += f"\n# Test Case: {tc.name} (ID: {tc.id})\n"
+            content += f"# State: {tc.state}, Modified: {tc.manually_modified}\n"
+            content += f"# Code length: {len(tc.robot_code) if tc.robot_code else 0} chars\n"
+            
+            if tc.robot_code:
+                code = tc.robot_code
+                if '*** Test Cases ***' in code:
+                    parts = code.split('*** Test Cases ***')
+                    if len(parts) > 1:
+                        test_part = parts[1]
+                        for section in ['*** Keywords ***', '*** Variables ***', '*** Settings ***']:
+                            if section in test_part:
+                                test_part = test_part.split(section)[0]
+                        content += test_part.strip() + "\n\n"
+                else:
+                    content += code + "\n\n"
+            else:
+                content += f"{tc.name}\n"
+                content += f"    [Documentation]    No robot code\n"
+                content += f"    Log    Test case has no robot code\n\n"
+        
+        return content
 
     def _log(self, message):
         """Append message to execution log"""

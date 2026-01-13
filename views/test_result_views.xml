@@ -274,6 +274,14 @@
                                 <field name="jenkins_build_url" widget="url" readonly="1"/>
                             </group>
                         </page>
+                        <page string="Robot Code Preview" name="robot_preview">
+                            <div class="alert alert-info mb-2">
+                                <strong>Debug:</strong> This shows the Robot code that will be sent to Jenkins.
+                                Verify the fix has been applied by checking the code content.
+                            </div>
+                            <field name="robot_code_preview" readonly="1" widget="ace" 
+                                   options="{'mode': 'robot'}"/>
+                        </page>
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">

@@ -374,9 +374,12 @@ Respond ONLY with the JSON object, no other text.
             'view_mode': 'form',
             'target': 'new',
             'context': {
+                'rerun_mode': True,  # Flag to prevent clearing pre-selected tests
+                'default_name': f"Re-run Fixed: {self.run_id.name}" if self.run_id else "Re-run Fixed Tests",
                 'default_test_case_ids': [(6, 0, fixed_tests.ids)],
                 'default_suite_id': self.run_id.suite_id.id if self.run_id and self.run_id.suite_id else False,
                 'default_customer_id': self.run_id.customer_id.id if self.run_id and self.run_id.customer_id else False,
+                'default_server_id': self.run_id.server_id.id if self.run_id and self.run_id.server_id else False,
             },
         }
 
@@ -428,7 +431,10 @@ class QAFixTestsWizardLine(models.TransientModel):
         if not self.test_case_id:
             raise UserError('No test case linked to this fix.')
         
-        _logger.info(f"Applying fix to test case {self.test_case_id.name}, fix_type={self.fix_type}")
+        _logger.info(f"Applying fix to test case {self.test_case_id.name} (ID: {self.test_case_id.id})")
+        _logger.info(f"Fix type: {self.fix_type}")
+        _logger.info(f"Fix code length: {len(fix_code)} chars")
+        _logger.info(f"Fix code preview: {fix_code[:500]}...")
         
         if self.fix_type == 'skip_test':
             self.test_case_id.write({
@@ -436,12 +442,25 @@ class QAFixTestsWizardLine(models.TransientModel):
                 'modification_notes': f"Skipped by AI Fix Wizard: {self.analysis[:500] if self.analysis else 'No analysis'}",
             })
         else:
+            # Store original code for rollback if needed
+            original_code = self.test_case_id.robot_code
+            
             self.test_case_id.write({
                 'robot_code': fix_code,
                 'state': 'ready',
                 'manually_modified': True,
                 'modification_notes': f"AI Fix Applied: {self.analysis[:500] if self.analysis else 'No analysis'}",
             })
+            
+            # Verify the fix was actually saved
+            self.test_case_id.invalidate_recordset()  # Clear cache
+            saved_code = self.test_case_id.robot_code
+            
+            if saved_code != fix_code:
+                _logger.error(f"Fix code mismatch! Expected {len(fix_code)} chars, got {len(saved_code) if saved_code else 0}")
+                raise UserError('Failed to save fix code. Please try again.')
+            
+            _logger.info(f"Fix verified - robot_code updated successfully ({len(saved_code)} chars)")
         
         self.applied = True
         _logger.info(f"Fix applied successfully to {self.test_case_id.name}")

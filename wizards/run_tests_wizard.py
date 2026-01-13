@@ -70,9 +70,14 @@ class QATestRunWizard(models.TransientModel):
     @api.onchange('customer_id')
     def _onchange_customer_id(self):
         """When customer changes, reset server and auto-select default"""
+        # Don't clear test cases if this is a rerun (tests pre-selected via context)
+        is_rerun = self.env.context.get('rerun_mode', False)
+        
+        if not is_rerun:
+            self.suite_id = False
+            self.test_case_ids = [(5, 0, 0)]  # Clear
+        
         self.server_id = False
-        self.suite_id = False
-        self.test_case_ids = [(5, 0, 0)]  # Clear
         
         if self.customer_id:
             # Auto-select first server (prefer staging/uat)
@@ -85,7 +90,10 @@ class QATestRunWizard(models.TransientModel):
     @api.onchange('suite_id')
     def _onchange_suite_id(self):
         if self.suite_id:
-            self.test_case_ids = self.suite_id.test_case_ids
+            # Only override test cases if not a rerun
+            is_rerun = self.env.context.get('rerun_mode', False)
+            if not is_rerun:
+                self.test_case_ids = self.suite_id.test_case_ids
             self.include_tags = self.suite_id.include_tags
             self.exclude_tags = self.suite_id.exclude_tags
             # Also set customer from suite if not set

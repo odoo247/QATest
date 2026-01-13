@@ -195,7 +195,15 @@ ${CURDATE}            %s
         test_cases_content = "*** Test Cases ***\n"
         
         for tc in run.test_case_ids:
+            _logger.info(f"Processing test case: {tc.name} (ID: {tc.id})")
+            _logger.info(f"  robot_code length: {len(tc.robot_code) if tc.robot_code else 0}")
+            _logger.info(f"  manually_modified: {tc.manually_modified}")
+            _logger.info(f"  state: {tc.state}")
+            
             if tc.robot_code:
+                # Log first 200 chars of robot code for debugging
+                _logger.info(f"  robot_code preview: {tc.robot_code[:200]}...")
+                
                 # Extract just the test case part from robot_code
                 code = tc.robot_code
                 

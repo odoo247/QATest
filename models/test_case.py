@@ -185,7 +185,10 @@ class QATestCase(models.Model):
             'view_mode': 'form',
             'target': 'new',
             'context': {
+                'rerun_mode': True,  # Prevent clearing pre-selected test
                 'default_test_case_ids': [(6, 0, [self.id])],
+                'default_customer_id': self.customer_id.id if self.customer_id else False,
+                'default_suite_id': self.suite_id.id if self.suite_id else False,
             }
         }
 
