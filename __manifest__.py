@@ -68,6 +68,7 @@ Technical Requirements
         'data/config_data.xml',
         'data/cron_data.xml',
         'data/mail_template_data.xml',
+        'data/fix_pattern_data.xml',
         # Wizards - MUST load before views that reference wizard actions
         'wizards/views/generate_tests_wizard_views.xml',
         'wizards/views/run_tests_wizard_views.xml',
@@ -81,6 +82,7 @@ Technical Requirements
         'views/test_case_views.xml',
         'views/test_suite_views.xml',
         'views/test_result_views.xml',
+        'views/fix_pattern_views.xml',
         # These reference test_case action, must come AFTER
         'views/requirement_views.xml',
         'views/health_check_views.xml',

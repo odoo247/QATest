@@ -18,3 +18,4 @@ from . import test_step
 from . import test_result
 from . import test_run
 from . import module_analyzer
+from . import fix_pattern

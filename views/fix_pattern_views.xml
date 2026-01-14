@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Fix Pattern Tree View -->
+    <record id="view_qa_fix_pattern_tree" model="ir.ui.view">
+        <field name="name">qa.fix.pattern.tree</field>
+        <field name="model">qa.fix.pattern</field>
+        <field name="arch" type="xml">
+            <list string="Fix Patterns" decoration-muted="not active">
+                <field name="name"/>
+                <field name="error_pattern"/>
+                <field name="error_type" widget="badge"/>
+                <field name="model_name"/>
+                <field name="use_count"/>
+                <field name="success_count"/>
+                <field name="source" widget="badge"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Fix Pattern Form View -->
+    <record id="view_qa_fix_pattern_form" model="ir.ui.view">
+        <field name="name">qa.fix.pattern.form</field>
+        <field name="model">qa.fix.pattern</field>
+        <field name="arch" type="xml">
+            <form string="Fix Pattern">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_increment_use" icon="fa-plus">
+                            <span>Test Use</span>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Inactive" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Pattern Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Error Matching">
+                            <field name="error_pattern" placeholder="e.g., Invalid field 'product_uom'"/>
+                            <field name="error_type"/>
+                            <field name="model_name" placeholder="e.g., sale.order.line"/>
+                            <field name="odoo_version" placeholder="e.g., 17.0"/>
+                        </group>
+                        <group string="Statistics">
+                            <field name="use_count"/>
+                            <field name="success_count"/>
+                            <field name="last_used"/>
+                            <field name="source"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Problem &amp; Solution" name="solution">
+                            <group>
+                                <field name="problem_description" placeholder="What causes this error..."/>
+                            </group>
+                            <group>
+                                <field name="solution_description" placeholder="How to fix it..."/>
+                            </group>
+                        </page>
+                        <page string="Code Examples" name="code">
+                            <group string="Wrong Code (causes error)">
+                                <field name="wrong_code" widget="ace" options="{'mode': 'robot'}" nolabel="1"/>
+                            </group>
+                            <group string="Correct Code (fix)">
+                                <field name="correct_code" widget="ace" options="{'mode': 'robot'}" nolabel="1"/>
+                            </group>
+                        </page>
+                        <page string="Source" name="source" invisible="source != 'learned'">
+                            <group>
+                                <field name="original_test_case_id"/>
+                                <field name="original_error"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Fix Pattern Search View -->
+    <record id="view_qa_fix_pattern_search" model="ir.ui.view">
+        <field name="name">qa.fix.pattern.search</field>
+        <field name="model">qa.fix.pattern</field>
+        <field name="arch" type="xml">
+            <search string="Search Fix Patterns">
+                <field name="name"/>
+                <field name="error_pattern"/>
+                <field name="model_name"/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Learned" name="learned" domain="[('source', '=', 'learned')]"/>
+                <filter string="System" name="system" domain="[('source', '=', 'system')]"/>
+                <separator/>
+                <filter string="Field Name Errors" name="field_name" domain="[('error_type', '=', 'field_name')]"/>
+                <filter string="Type Errors" name="type_error" domain="[('error_type', '=', 'type_error')]"/>
+                <filter string="Missing Data" name="missing_data" domain="[('error_type', '=', 'missing_data')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Error Type" name="group_error_type" context="{'group_by': 'error_type'}"/>
+                    <filter string="Model" name="group_model" context="{'group_by': 'model_name'}"/>
+                    <filter string="Source" name="group_source" context="{'group_by': 'source'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Fix Pattern Action -->
+    <record id="action_qa_fix_pattern" model="ir.actions.act_window">
+        <field name="name">Fix Patterns</field>
+        <field name="res_model">qa.fix.pattern</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No fix patterns yet
+            </p>
+            <p>
+                Fix patterns are learned from successful test fixes.
+                They help the AI avoid repeating the same mistakes.
+            </p>
+        </field>
+    </record>
+</odoo>

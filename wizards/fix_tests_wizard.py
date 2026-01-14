@@ -189,6 +189,14 @@ class QAFixTestsWizard(models.TransientModel):
             except:
                 pass
         
+        # Get relevant fix patterns from knowledge base
+        FixPattern = self.env['qa.fix.pattern']
+        patterns_prompt = FixPattern.get_patterns_for_prompt(error_message, limit=5)
+        
+        # Mark patterns as used
+        matching_patterns = FixPattern.find_matching_patterns(error_message)
+        matching_patterns.action_increment_use()
+        
         prompt = f"""Analyze this failed Robot Framework test and provide a COMPLETE, SELF-CONTAINED fix.
 
 ## Test Case: {test_case.name}
@@ -204,6 +212,8 @@ class QAFixTestsWizard(models.TransientModel):
 ```
 {error_message}
 ```
+
+{patterns_prompt}
 
 ## CRITICAL: ODOO VERSION FIELD NAME DIFFERENCES
 
@@ -508,11 +518,56 @@ class QAFixTestsWizardLine(models.TransientModel):
                 raise UserError('Failed to save fix code. Please try again.')
             
             _logger.info(f"Fix verified - robot_code updated successfully ({len(saved_code)} chars)")
+            
+            # Learn from this fix - create/update fix pattern
+            self._learn_from_fix(original_code, fix_code)
         
         self.applied = True
         _logger.info(f"Fix applied successfully to {self.test_case_id.name}")
         
         return True
+
+    def _learn_from_fix(self, original_code, fix_code):
+        """Learn from this fix and create a fix pattern"""
+        if not self.error_message or not self.analysis:
+            return
+        
+        try:
+            FixPattern = self.env['qa.fix.pattern']
+            
+            # Create pattern from this fix
+            FixPattern.create_from_fix(
+                test_case=self.test_case_id,
+                error_message=self.error_message,
+                fix_description=self.analysis,
+                wrong_code=self._extract_relevant_code(original_code),
+                correct_code=self._extract_relevant_code(fix_code),
+            )
+            
+            _logger.info(f"Learned fix pattern from: {self.test_name}")
+            
+        except Exception as e:
+            _logger.warning(f"Could not learn from fix: {e}")
+    
+    def _extract_relevant_code(self, code, max_lines=15):
+        """Extract relevant portion of code for pattern"""
+        if not code:
+            return ""
+        
+        # Find the test case content
+        lines = code.split('\n')
+        
+        # Find where actual test steps start (after [Tags], [Documentation], etc.)
+        start_idx = 0
+        for i, line in enumerate(lines):
+            if line.strip() and not line.strip().startswith(('[', '***', '#')):
+                if not line.strip().startswith('Test '):
+                    start_idx = i
+                    break
+        
+        # Get relevant lines
+        relevant = lines[start_idx:start_idx + max_lines]
+        return '\n'.join(relevant)
 
     def action_view_diff(self):
         """View diff between original and suggested fix"""
