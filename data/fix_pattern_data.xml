@@ -2,201 +2,102 @@
 <odoo>
     <data noupdate="1">
         
-        <!-- Field Name Patterns - Odoo 17+ -->
+        <!-- VERIFIED System Patterns - These are known good fixes -->
         
         <record id="fix_pattern_product_uom" model="qa.fix.pattern">
             <field name="name">product_uom → product_uom_id (Odoo 17+)</field>
             <field name="error_pattern">Invalid field 'product_uom'</field>
-            <field name="error_type">field_name</field>
             <field name="model_name">sale.order.line</field>
-            <field name="odoo_version">17</field>
-            <field name="problem_description">In Odoo 17+, the field 'product_uom' was renamed to 'product_uom_id' on sale.order.line, purchase.order.line, and similar models.</field>
-            <field name="solution_description">Replace 'product_uom' with 'product_uom_id' in all code that creates or updates order lines.</field>
+            <field name="odoo_version_min">17.0</field>
+            <field name="problem">In Odoo 17+, the field 'product_uom' was renamed to 'product_uom_id' on sale.order.line, purchase.order.line, and similar models.</field>
+            <field name="solution">Replace 'product_uom' with 'product_uom_id' in all code that creates or updates order lines.</field>
             <field name="wrong_code"># WRONG - Odoo 16 and earlier field name
 ${vals}=    Create Dictionary
 ...    product_id=${product_id}
 ...    product_uom=${uom_id}
-...    product_uom_qty=1
 ${line_id}=    Create Record    sale.order.line    &amp;{vals}</field>
             <field name="correct_code"># CORRECT - Odoo 17+ field name
 ${vals}=    Create Dictionary
 ...    product_id=${product_id}
 ...    product_uom_id=${uom_id}
-...    product_uom_qty=1
 ${line_id}=    Create Record    sale.order.line    &amp;{vals}</field>
+            <field name="verified" eval="True"/>
             <field name="source">system</field>
+            <field name="success_count">10</field>
         </record>
 
-        <record id="fix_pattern_product_uom_purchase" model="qa.fix.pattern">
-            <field name="name">product_uom → product_uom_id (purchase.order.line)</field>
-            <field name="error_pattern">Invalid field 'product_uom'</field>
-            <field name="error_type">field_name</field>
-            <field name="model_name">purchase.order.line</field>
-            <field name="odoo_version">17</field>
-            <field name="problem_description">In Odoo 17+, the field 'product_uom' was renamed to 'product_uom_id' on purchase.order.line.</field>
-            <field name="solution_description">Replace 'product_uom' with 'product_uom_id' when creating purchase order lines.</field>
-            <field name="wrong_code"># WRONG
-${vals}=    Create Dictionary    product_id=${product_id}    product_uom=${uom_id}</field>
-            <field name="correct_code"># CORRECT
-${vals}=    Create Dictionary    product_id=${product_id}    product_uom_id=${uom_id}</field>
-            <field name="source">system</field>
-        </record>
-
-        <!-- Type Error Patterns -->
-        
         <record id="fix_pattern_wrong_container" model="qa.fix.pattern">
             <field name="name">Wrong container value (type mismatch)</field>
             <field name="error_pattern">Wrong container value</field>
-            <field name="error_type">type_error</field>
-            <field name="problem_description">This error occurs when passing a wrong type to a field. Common causes:
-- Passing a string where an integer is expected (Many2one fields)
-- Passing an integer where a list is expected (One2many fields)
-- Wrong tuple format for One2many commands</field>
-            <field name="solution_description">Ensure correct types:
-- Many2one: Pass integer ID directly, not string
-- One2many: Use list of tuples [(0, 0, {...})]
-- Selection: Pass string value
-- Boolean: Use ${True} or ${False}</field>
-            <field name="wrong_code"># WRONG - string instead of integer
-${order_vals}=    Create Dictionary
+            <field name="problem">Passing wrong type to a field: string instead of integer (Many2one), integer instead of list (One2many), or wrong tuple format.</field>
+            <field name="solution">Use correct types: Many2one=integer ID, One2many=[(0,0,{...})], Boolean=${True}/${False}</field>
+            <field name="wrong_code"># WRONG - string instead of integer, wrong One2many format
+${vals}=    Create Dictionary
 ...    partner_id="5"
 ...    order_line=1</field>
             <field name="correct_code"># CORRECT - proper types
 ${partner_id}=    Set Variable    ${5}
-${order_vals}=    Create Dictionary
+${vals}=    Create Dictionary
 ...    partner_id=${partner_id}
-...    order_line=[(0, 0, {'product_id': ${product_id}, 'product_uom_qty': 1})]</field>
+...    order_line=[(0, 0, {'product_id': ${product_id}})]</field>
+            <field name="verified" eval="True"/>
             <field name="source">system</field>
+            <field name="success_count">5</field>
         </record>
 
         <record id="fix_pattern_bypass_access" model="qa.fix.pattern">
             <field name="name">bypass_access parameter not supported</field>
             <field name="error_pattern">unexpected keyword argument 'bypass_access'</field>
-            <field name="error_type">other</field>
-            <field name="problem_description">The 'bypass_access' parameter is not supported in this Odoo version or in JSON-RPC calls. This happens when using internal Odoo methods that expect different parameters.</field>
-            <field name="solution_description">Remove the bypass_access parameter. Use simpler search queries without access control parameters. If you need to bypass access rights, ensure the user has proper permissions or use sudo() in Python code.</field>
-            <field name="wrong_code"># WRONG - bypass_access not supported in RPC
-${ids}=    Search Records    product.product    domain=[]    bypass_access=True</field>
-            <field name="correct_code"># CORRECT - simple search without bypass_access
-${ids}=    Search Records    product.product    domain=[]    limit=10</field>
+            <field name="problem">The 'bypass_access' parameter is internal to Odoo and not available via JSON-RPC.</field>
+            <field name="solution">Remove bypass_access parameter. Use simple search without access control parameters.</field>
+            <field name="wrong_code"># WRONG
+${ids}=    Search Records    product.product    bypass_access=True</field>
+            <field name="correct_code"># CORRECT
+${ids}=    Search Records    product.product    limit=10</field>
+            <field name="verified" eval="True"/>
             <field name="source">system</field>
+            <field name="success_count">3</field>
         </record>
 
-        <!-- Missing Data Patterns -->
-        
-        <record id="fix_pattern_no_product_found" model="qa.fix.pattern">
-            <field name="name">No saleable product found</field>
+        <record id="fix_pattern_no_product" model="qa.fix.pattern">
+            <field name="name">Create test data instead of searching</field>
             <field name="error_pattern">No saleable product found</field>
-            <field name="error_type">missing_data</field>
-            <field name="problem_description">The test is trying to find an existing product with sale_ok=True, but the database has no such products. This commonly happens on empty or minimal test databases.</field>
-            <field name="solution_description">Create the required test data at the start of the test instead of searching for existing data. Always create test data - never assume data exists.</field>
+            <field name="problem">Test database may be empty. Searching for existing records fails.</field>
+            <field name="solution">Create test data at start of test instead of assuming it exists.</field>
             <field name="wrong_code"># WRONG - assumes data exists
-${product_ids}=    Search Records    product.product    domain=[('sale_ok','=',True)]
-Should Be True    len(${product_ids}) > 0    msg=No saleable product found</field>
+${ids}=    Search Records    product.product    domain=[('sale_ok','=',True)]
+Should Be True    len(${ids}) > 0</field>
             <field name="correct_code"># CORRECT - create test data
 ${product_id}=    Create Record    product.product
 ...    name=QA Test Product
 ...    type=consu
 ...    sale_ok=${True}
-...    list_price=100.0
-
-# Use the created product
-Should Be True    ${product_id} > 0</field>
+...    list_price=100.0</field>
+            <field name="verified" eval="True"/>
             <field name="source">system</field>
+            <field name="success_count">8</field>
         </record>
 
-        <record id="fix_pattern_no_partner_found" model="qa.fix.pattern">
-            <field name="name">No partner/customer found</field>
-            <field name="error_pattern">No partner found</field>
-            <field name="error_type">missing_data</field>
-            <field name="problem_description">The test is searching for existing partners/customers but the database has none or none matching the criteria.</field>
-            <field name="solution_description">Create test partner at the start of the test.</field>
-            <field name="wrong_code"># WRONG - assumes partners exist
-${partner_ids}=    Search Records    res.partner    domain=[('is_company','=',True)]
-Should Be True    len(${partner_ids}) > 0</field>
-            <field name="correct_code"># CORRECT - create test partner
-${partner_id}=    Create Record    res.partner
-...    name=QA Test Company
-...    is_company=${True}
-...    email=test@example.com
-
-# Use the created partner
-Should Be True    ${partner_id} > 0</field>
-            <field name="source">system</field>
-        </record>
-
-        <!-- Keyword Patterns -->
-        
         <record id="fix_pattern_keyword_not_found" model="qa.fix.pattern">
-            <field name="name">No keyword with name 'X' found</field>
+            <field name="name">Inline code instead of custom Keywords</field>
             <field name="error_pattern">No keyword with name</field>
-            <field name="error_type">keyword</field>
-            <field name="problem_description">The test uses a custom keyword defined in *** Keywords *** section, but when the robot file is combined for Jenkins execution, the Keywords section may be stripped or not properly included.</field>
-            <field name="solution_description">Avoid using custom keywords. Put all logic directly inline in the test case. This makes tests self-contained and avoids keyword scope issues.</field>
-            <field name="wrong_code"># WRONG - uses custom keyword that may not be found
+            <field name="problem">Custom keywords defined in *** Keywords *** section may be stripped when robot files are combined.</field>
+            <field name="solution">Put all logic inline in the test case. Don't use custom keywords.</field>
+            <field name="wrong_code"># WRONG - custom keyword may not be found
 *** Keywords ***
 Create Test Data
     ${id}=    Create Record    res.partner    name=Test
-    Set Test Variable    ${partner_id}    ${id}
 
 *** Test Cases ***
 My Test
-    Create Test Data    # May fail with "No keyword found"</field>
+    Create Test Data</field>
             <field name="correct_code"># CORRECT - inline everything
 *** Test Cases ***
 My Test
-    # Create data inline - no custom keyword needed
-    ${partner_id}=    Create Record    res.partner    name=QA Test Partner
-    Should Be True    ${partner_id} > 0</field>
+    ${partner_id}=    Create Record    res.partner    name=QA Test Partner</field>
+            <field name="verified" eval="True"/>
             <field name="source">system</field>
-        </record>
-
-        <!-- Validation Patterns -->
-        
-        <record id="fix_pattern_readonly_field" model="qa.fix.pattern">
-            <field name="name">Cannot set readonly/computed field</field>
-            <field name="error_pattern">readonly</field>
-            <field name="error_type">validation</field>
-            <field name="problem_description">Trying to set a value on a readonly or computed field. Computed fields are automatically calculated by Odoo and cannot be set directly.</field>
-            <field name="solution_description">Remove the readonly field from the create/write values. Set the source fields that are used to compute the value instead.</field>
-            <field name="wrong_code"># WRONG - trying to set computed field
-${vals}=    Create Dictionary
-...    name=Test Order
-...    amount_total=1500.00    # amount_total is computed!
-${id}=    Create Record    sale.order    &amp;{vals}</field>
-            <field name="correct_code"># CORRECT - set source fields, not computed
-${vals}=    Create Dictionary
-...    partner_id=${partner_id}
-...    order_line=[(0, 0, {'product_id': ${product_id}, 'price_unit': 1500.00, 'product_uom_qty': 1})]
-${id}=    Create Record    sale.order    &amp;{vals}
-# amount_total will be computed automatically from order lines</field>
-            <field name="source">system</field>
-        </record>
-
-        <record id="fix_pattern_variable_not_found" model="qa.fix.pattern">
-            <field name="name">Variable '${X}' not found</field>
-            <field name="error_pattern">Variable</field>
-            <field name="error_type">other</field>
-            <field name="model_name"></field>
-            <field name="problem_description">A variable is used before being defined, or is used in teardown but may not have been created if the test failed early.</field>
-            <field name="solution_description">Initialize all variables at the start of the test with default values (like ${EMPTY}). This ensures teardown can safely reference them even if the test fails before they're set.</field>
-            <field name="wrong_code"># WRONG - variable may not exist in teardown if test fails
-Test Something
-    ${order_id}=    Create Record    sale.order    partner_id=${partner_id}
-    # If this fails, ${order_id} doesn't exist for teardown
-    [Teardown]    Delete Record    sale.order    ${order_id}</field>
-            <field name="correct_code"># CORRECT - initialize variables at start
-Test Something
-    # Initialize with safe default
-    ${order_id}=    Set Variable    ${EMPTY}
-    
-    # Now create
-    ${order_id}=    Create Record    sale.order    partner_id=${partner_id}
-    
-    # Teardown handles empty value safely
-    [Teardown]    Run Keyword If    '${order_id}' != '${EMPTY}'
-    ...    Run Keyword And Ignore Error    Delete Record    sale.order    ${order_id}</field>
-            <field name="source">system</field>
+            <field name="success_count">6</field>
         </record>
 
     </data>

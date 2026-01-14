@@ -113,6 +113,15 @@ class QATestCase(models.Model):
     last_screenshot = fields.Binary(string='Last Screenshot', readonly=True)
     last_screenshot_name = fields.Char(string='Screenshot Name')
     
+    # Pending fix - waiting to be verified and learned
+    pending_fix_error = fields.Text(string='Pending Fix Error',
+                                    help='Error message this fix addresses (waiting for verification)')
+    pending_fix_analysis = fields.Text(string='Pending Fix Analysis',
+                                       help='AI analysis of the fix')
+    pending_fix_original_code = fields.Text(string='Original Code Before Fix')
+    pending_fix_verified = fields.Boolean(string='Fix Verified', default=False,
+                                          help='True if test passed after fix was applied')
+    
     # Statistics
     total_runs = fields.Integer(string='Total Runs', compute='_compute_statistics')
     pass_count = fields.Integer(string='Pass Count', compute='_compute_statistics')
@@ -329,3 +338,121 @@ class QATestCase(models.Model):
                 'last_error_message': str(e),
             })
             raise
+
+    def action_save_fix_to_knowledge(self):
+        """
+        Save the verified fix to knowledge base.
+        ONLY called after: 1) Fix applied, 2) Test passed, 3) Human clicks this button
+        """
+        self.ensure_one()
+        
+        if not self.pending_fix_error:
+            raise UserError('No pending fix to save.')
+        
+        if self.state != 'passed':
+            raise UserError('Test must pass before saving fix to knowledge. Run the test first.')
+        
+        # Extract model name from robot code
+        model_name = None
+        if self.robot_code:
+            import re
+            match = re.search(r"Create Record\s+(\w+\.\w+)", self.robot_code)
+            if match:
+                model_name = match.group(1)
+        
+        # Create verified pattern
+        FixPattern = self.env['qa.fix.pattern']
+        pattern = FixPattern.create_verified_pattern(
+            error_message=self.pending_fix_error,
+            problem=f"Error: {self.pending_fix_error[:200]}",
+            solution=self.pending_fix_analysis or 'Fix verified by testing',
+            wrong_code=self._extract_code_snippet(self.pending_fix_original_code),
+            correct_code=self._extract_code_snippet(self.robot_code),
+            model_name=model_name,
+            test_case=self,
+        )
+        
+        # Clear pending fix
+        self.write({
+            'pending_fix_error': False,
+            'pending_fix_analysis': False,
+            'pending_fix_original_code': False,
+            'pending_fix_verified': True,
+        })
+        
+        if pattern:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Fix Saved to Knowledge Base!',
+                    'message': f'Pattern "{pattern.name}" saved. AI will use this for similar errors.',
+                    'type': 'success',
+                    'sticky': False,
+                }
+            }
+        else:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Pattern Updated',
+                    'message': 'Existing pattern was updated with this success.',
+                    'type': 'info',
+                }
+            }
+
+    def action_discard_pending_fix(self):
+        """Discard pending fix without saving to knowledge base"""
+        self.ensure_one()
+        self.write({
+            'pending_fix_error': False,
+            'pending_fix_analysis': False,
+            'pending_fix_original_code': False,
+            'pending_fix_verified': False,
+        })
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Pending Fix Discarded',
+                'message': 'The fix was not saved to knowledge base.',
+                'type': 'warning',
+            }
+        }
+
+    def _extract_code_snippet(self, code, max_lines=20):
+        """Extract relevant code snippet for pattern"""
+        if not code:
+            return ""
+        
+        lines = code.split('\n')
+        
+        # Skip header sections, get actual test content
+        start = 0
+        for i, line in enumerate(lines):
+            if line.strip().startswith('${') or line.strip().startswith('Should') or \
+               line.strip().startswith('Create') or line.strip().startswith('Search'):
+                start = max(0, i - 2)  # Include some context
+                break
+        
+        return '\n'.join(lines[start:start + max_lines])
+
+    def check_and_prompt_fix_learning(self):
+        """
+        Check if test passed with a pending fix and prompt for learning
+        Called after test execution
+        """
+        if self.state == 'passed' and self.pending_fix_error:
+            self.pending_fix_verified = True
+            # Return action to prompt user
+            return {
+                'type': 'ir.actions.act_window',
+                'name': 'Fix Verified - Save to Knowledge Base?',
+                'res_model': 'qa.test.case',
+                'view_mode': 'form',
+                'res_id': self.id,
+                'target': 'new',
+                'views': [(self.env.ref('qa_test_generator.view_qa_test_case_fix_approval_form').id, 'form')],
+            }
+        return False

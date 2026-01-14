@@ -18,10 +18,33 @@
                     <button name="action_regenerate" type="object" 
                             string="Regenerate" class="btn-secondary"
                             invisible="not spec_id"/>
+                    <button name="action_save_fix_to_knowledge" type="object"
+                            string="Save Fix to Knowledge Base" class="btn-success"
+                            invisible="not pending_fix_error or state != 'passed'"
+                            icon="fa-graduation-cap"/>
+                    <button name="action_discard_pending_fix" type="object"
+                            string="Discard Fix" class="btn-secondary"
+                            invisible="not pending_fix_error"
+                            confirm="Are you sure you want to discard this fix without saving to knowledge base?"/>
                     <field name="state" widget="statusbar" 
                            statusbar_visible="draft,ready,passed,failed"/>
                 </header>
                 <sheet>
+                    <!-- Pending Fix Approval Banner -->
+                    <div class="alert alert-success" role="alert" invisible="not pending_fix_error or state != 'passed'">
+                        <h4 class="alert-heading"><i class="fa fa-check-circle"/> Fix Verified!</h4>
+                        <p>This test passed after applying the fix. Would you like to save this fix to the knowledge base?</p>
+                        <p><strong>Error fixed:</strong> <field name="pending_fix_error" nolabel="1" readonly="1"/></p>
+                        <hr/>
+                        <p class="mb-0">Click <strong>"Save Fix to Knowledge Base"</strong> above to help the AI learn from this fix.</p>
+                    </div>
+                    
+                    <div class="alert alert-warning" role="alert" invisible="not pending_fix_error or state == 'passed'">
+                        <h4 class="alert-heading"><i class="fa fa-hourglass-half"/> Fix Pending Verification</h4>
+                        <p>A fix has been applied but not yet verified. Run the test to check if it works.</p>
+                        <p><strong>Error being fixed:</strong> <field name="pending_fix_error" nolabel="1" readonly="1"/></p>
+                    </div>
+                    
                     <div class="oe_button_box" name="button_box">
                         <button name="action_view_results" type="object" 
                                 class="oe_stat_button" icon="fa-list">

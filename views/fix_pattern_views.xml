@@ -5,15 +5,15 @@
         <field name="name">qa.fix.pattern.tree</field>
         <field name="model">qa.fix.pattern</field>
         <field name="arch" type="xml">
-            <list string="Fix Patterns" decoration-muted="not active">
+            <list string="Fix Patterns" decoration-success="verified" decoration-muted="not active">
                 <field name="name"/>
                 <field name="error_pattern"/>
-                <field name="error_type" widget="badge"/>
                 <field name="model_name"/>
-                <field name="use_count"/>
+                <field name="verified" widget="boolean"/>
                 <field name="success_count"/>
+                <field name="success_rate" widget="progressbar"/>
                 <field name="source" widget="badge"/>
-                <field name="active" widget="boolean_toggle"/>
+                <field name="active" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -25,12 +25,8 @@
         <field name="arch" type="xml">
             <form string="Fix Pattern">
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button class="oe_stat_button" type="object" name="action_increment_use" icon="fa-plus">
-                            <span>Test Use</span>
-                        </button>
-                    </div>
-                    <widget name="web_ribbon" title="Inactive" bg_color="text-bg-danger" invisible="active"/>
+                    <widget name="web_ribbon" title="Verified" bg_color="text-bg-success" invisible="not verified"/>
+                    <widget name="web_ribbon" title="Not Verified" bg_color="text-bg-warning" invisible="verified"/>
                     <div class="oe_title">
                         <h1>
                             <field name="name" placeholder="Pattern Name"/>
@@ -39,14 +35,22 @@
                     <group>
                         <group string="Error Matching">
                             <field name="error_pattern" placeholder="e.g., Invalid field 'product_uom'"/>
-                            <field name="error_type"/>
+                            <field name="error_regex" placeholder="Optional regex"/>
                             <field name="model_name" placeholder="e.g., sale.order.line"/>
-                            <field name="odoo_version" placeholder="e.g., 17.0"/>
                         </group>
-                        <group string="Statistics">
-                            <field name="use_count"/>
+                        <group string="Version &amp; Stats">
+                            <field name="odoo_version_min" placeholder="e.g., 17.0"/>
+                            <field name="odoo_version_max" placeholder="e.g., 19.0"/>
+                            <field name="times_suggested"/>
                             <field name="success_count"/>
-                            <field name="last_used"/>
+                            <field name="success_rate" widget="progressbar"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Verification">
+                            <field name="verified"/>
+                            <field name="verified_by" invisible="not verified"/>
+                            <field name="verified_date" invisible="not verified"/>
                             <field name="source"/>
                             <field name="active"/>
                         </group>
@@ -54,10 +58,10 @@
                     <notebook>
                         <page string="Problem &amp; Solution" name="solution">
                             <group>
-                                <field name="problem_description" placeholder="What causes this error..."/>
+                                <field name="problem" placeholder="What causes this error..."/>
                             </group>
                             <group>
-                                <field name="solution_description" placeholder="How to fix it..."/>
+                                <field name="solution" placeholder="How to fix it..."/>
                             </group>
                         </page>
                         <page string="Code Examples" name="code">
@@ -70,8 +74,8 @@
                         </page>
                         <page string="Source" name="source" invisible="source != 'learned'">
                             <group>
-                                <field name="original_test_case_id"/>
-                                <field name="original_error"/>
+                                <field name="source_test_case_id"/>
+                                <field name="source_error"/>
                             </group>
                         </page>
                     </notebook>
@@ -89,17 +93,16 @@
                 <field name="name"/>
                 <field name="error_pattern"/>
                 <field name="model_name"/>
-                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Verified" name="verified" domain="[('verified', '=', True)]"/>
+                <filter string="Not Verified" name="not_verified" domain="[('verified', '=', False)]"/>
+                <separator/>
                 <filter string="Learned" name="learned" domain="[('source', '=', 'learned')]"/>
                 <filter string="System" name="system" domain="[('source', '=', 'system')]"/>
-                <separator/>
-                <filter string="Field Name Errors" name="field_name" domain="[('error_type', '=', 'field_name')]"/>
-                <filter string="Type Errors" name="type_error" domain="[('error_type', '=', 'type_error')]"/>
-                <filter string="Missing Data" name="missing_data" domain="[('error_type', '=', 'missing_data')]"/>
+                <filter string="Manual" name="manual" domain="[('source', '=', 'manual')]"/>
                 <group expand="0" string="Group By">
-                    <filter string="Error Type" name="group_error_type" context="{'group_by': 'error_type'}"/>
                     <filter string="Model" name="group_model" context="{'group_by': 'model_name'}"/>
                     <filter string="Source" name="group_source" context="{'group_by': 'source'}"/>
+                    <filter string="Verified" name="group_verified" context="{'group_by': 'verified'}"/>
                 </group>
             </search>
         </field>
@@ -107,17 +110,23 @@
 
     <!-- Fix Pattern Action -->
     <record id="action_qa_fix_pattern" model="ir.actions.act_window">
-        <field name="name">Fix Patterns</field>
+        <field name="name">Fix Patterns (Knowledge Base)</field>
         <field name="res_model">qa.fix.pattern</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{'search_default_active': 1}</field>
+        <field name="context">{'search_default_verified': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                No fix patterns yet
+                No fix patterns in knowledge base
             </p>
             <p>
-                Fix patterns are learned from successful test fixes.
-                They help the AI avoid repeating the same mistakes.
+                Fix patterns are learned when:
+                <ol>
+                    <li>AI suggests a fix</li>
+                    <li>You apply and run the test</li>
+                    <li>Test PASSES</li>
+                    <li>You click "Save Fix to Knowledge Base"</li>
+                </ol>
+                Only verified fixes are used to help the AI.
             </p>
         </field>
     </record>
