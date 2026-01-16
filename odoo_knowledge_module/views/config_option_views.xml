@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_config_option_tree" model="ir.ui.view">
+        <field name="name">ai.config.option.tree</field>
+        <field name="model">ai.config.option</field>
+        <field name="arch" type="xml">
+            <list><field name="name"/><field name="module"/><field name="config_type"/><field name="complexity"/><field name="estimated_hours"/></list>
+        </field>
+    </record>
+    <record id="view_config_option_form" model="ir.ui.view">
+        <field name="name">ai.config.option.form</field>
+        <field name="model">ai.config.option</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group><group><field name="name"/><field name="module"/><field name="config_type"/></group>
+                    <group><field name="complexity"/><field name="estimated_hours"/><field name="requires_studio"/><field name="requires_enterprise"/></group></group>
+                    <group string="Description"><field name="description" nolabel="1"/></group>
+                    <group><field name="location"/></group>
+                    <group string="Steps"><field name="steps" nolabel="1"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_config_option" model="ir.actions.act_window">
+        <field name="name">Configuration Options</field><field name="res_model">ai.config.option</field><field name="view_mode">list,form</field>
+    </record>
+</odoo>

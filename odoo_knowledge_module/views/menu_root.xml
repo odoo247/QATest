@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root Menu (no action dependency) -->
+    <menuitem id="menu_ai_knowledge_root" name="AI Knowledge" sequence="100"/>
+    
+    <!-- Parent Menus (no action dependency) -->
+    <menuitem id="menu_developer" name="Developer" parent="menu_ai_knowledge_root" sequence="10"/>
+    <menuitem id="menu_consultant" name="Consultant" parent="menu_ai_knowledge_root" sequence="20"/>
+</odoo>

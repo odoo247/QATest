@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_import_wizard_form" model="ir.ui.view">
+        <field name="name">ai.import.wizard.form</field>
+        <field name="model">ai.import.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="file_data" filename="file_name"/>
+                    <field name="file_name" invisible="1"/>
+                </group>
+                <group invisible="not result">
+                    <field name="result" readonly="1"/>
+                </group>
+                <footer>
+                    <button name="action_import" string="Import" type="object" class="btn-primary"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+    <record id="action_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import Knowledge</field>
+        <field name="res_model">ai.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

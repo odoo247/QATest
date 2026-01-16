@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Breaking Changes -->
+        <record id="bc_post_to_action_post" model="ai.breaking.change">
+            <field name="from_version">17.0</field><field name="to_version">18.0</field>
+            <field name="category">method_rename</field><field name="model_name">account.move</field>
+            <field name="method_name">post</field>
+            <field name="description">post() renamed to action_post()</field>
+            <field name="old_code">invoice.post()</field><field name="new_code">invoice.action_post()</field>
+        </record>
+        <record id="bc_owl_migration" model="ai.breaking.change">
+            <field name="from_version">16.0</field><field name="to_version">17.0</field>
+            <field name="category">js_change</field>
+            <field name="description">Legacy widgets replaced with OWL components</field>
+            <field name="old_code">var Widget = require('web.Widget')</field>
+            <field name="new_code">import { Component } from "@odoo/owl"</field>
+        </record>
+        <record id="bc_api_multi" model="ai.breaking.change">
+            <field name="from_version">13.0</field><field name="to_version">14.0</field>
+            <field name="category">api_change</field>
+            <field name="description">@api.multi removed (now default)</field>
+            <field name="old_code">@api.multi</field><field name="new_code"># Remove decorator</field>
+        </record>
+        
+        <!-- Features -->
+        <record id="feat_quotations" model="ai.module.feature">
+            <field name="module">sale</field><field name="module_category">sales</field>
+            <field name="name">Quotation Management</field>
+            <field name="description">Create and send quotations with products, pricing, terms</field>
+            <field name="capabilities">Quotation templates, Email as PDF, Online signature, Convert to SO</field>
+            <field name="keywords">quotation,quote,proposal,sales order</field>
+        </record>
+        <record id="feat_multi_warehouse" model="ai.module.feature">
+            <field name="module">stock</field><field name="module_category">inventory</field>
+            <field name="name">Multi-Warehouse</field>
+            <field name="description">Manage inventory across multiple warehouses</field>
+            <field name="capabilities">Multiple locations, Inter-warehouse transfers, Per-warehouse stock</field>
+            <field name="keywords">warehouse,location,transfer,multi-warehouse</field>
+        </record>
+        <record id="feat_barcode" model="ai.module.feature">
+            <field name="module">stock_barcode</field><field name="module_category">inventory</field>
+            <field name="name">Barcode Scanning</field>
+            <field name="description">Scan barcodes for inventory operations</field>
+            <field name="edition">enterprise</field>
+            <field name="keywords">barcode,scan,scanner,picking</field>
+        </record>
+        
+        <!-- Config Options -->
+        <record id="cfg_approval" model="ai.config.option">
+            <field name="name">Quotation Approval</field><field name="module">sale</field>
+            <field name="config_type">studio</field><field name="requires_studio" eval="True"/>
+            <field name="description">Add approval workflow to quotations</field>
+            <field name="estimated_hours">2</field>
+            <field name="keywords">approval,quotation approval</field>
+        </record>
+        <record id="cfg_storage_locations" model="ai.config.option">
+            <field name="name">Storage Locations</field><field name="module">stock</field>
+            <field name="config_type">setting</field>
+            <field name="description">Track inventory at bin/shelf level</field>
+            <field name="location">Settings > Inventory > Warehouse > Storage Locations</field>
+            <field name="estimated_hours">2</field>
+            <field name="keywords">location,bin,shelf,storage</field>
+        </record>
+        
+        <!-- Limitations -->
+        <record id="lim_lifo" model="ai.limitation">
+            <field name="area">inventory</field>
+            <field name="limitation">No native LIFO costing</field>
+            <field name="description">Odoo supports FIFO, AVCO, Standard but not LIFO</field>
+            <field name="workaround">Custom development or FIFO with adjustments</field>
+            <field name="workaround_complexity">complex</field>
+            <field name="keywords">lifo,costing,inventory valuation</field>
+        </record>
+        <record id="lim_commission" model="ai.limitation">
+            <field name="area">sales</field>
+            <field name="limitation">No native commission calculation</field>
+            <field name="description">Basic sales team targets but no automatic commission</field>
+            <field name="workaround">Custom module for commission rules</field>
+            <field name="workaround_complexity">moderate</field>
+            <field name="keywords">commission,sales commission,incentive</field>
+        </record>
+    </data>
+</odoo>

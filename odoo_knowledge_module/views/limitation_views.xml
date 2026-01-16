@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_limitation_tree" model="ir.ui.view">
+        <field name="name">ai.limitation.tree</field>
+        <field name="model">ai.limitation</field>
+        <field name="arch" type="xml">
+            <list><field name="area"/><field name="limitation"/><field name="workaround_complexity"/></list>
+        </field>
+    </record>
+    <record id="view_limitation_form" model="ir.ui.view">
+        <field name="name">ai.limitation.form</field>
+        <field name="model">ai.limitation</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group><group><field name="area"/><field name="limitation"/></group>
+                    <group><field name="workaround_complexity"/><field name="keywords"/></group></group>
+                    <group string="Description"><field name="description" nolabel="1"/></group>
+                    <group string="Workaround"><field name="workaround" nolabel="1"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_limitation" model="ir.actions.act_window">
+        <field name="name">Limitations</field><field name="res_model">ai.limitation</field><field name="view_mode">list,form</field>
+    </record>
+</odoo>

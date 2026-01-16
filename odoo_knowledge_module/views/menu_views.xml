@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Developer Menus (require actions) -->
+    <menuitem id="menu_breaking_changes" name="Breaking Changes" parent="menu_developer" action="action_breaking_change" sequence="10"/>
+    <menuitem id="menu_code_patterns" name="Code Patterns" parent="menu_developer" action="action_code_pattern" sequence="20"/>
+    <menuitem id="menu_error_patterns" name="Error Patterns" parent="menu_developer" action="action_error_pattern" sequence="30"/>
+    <menuitem id="menu_model_schemas" name="Model Schemas" parent="menu_developer" action="action_model_schema" sequence="40"/>
+    
+    <!-- Consultant Menus (require actions) -->
+    <menuitem id="menu_module_features" name="Standard Features" parent="menu_consultant" action="action_module_feature" sequence="10"/>
+    <menuitem id="menu_config_options" name="Configuration Options" parent="menu_consultant" action="action_config_option" sequence="20"/>
+    <menuitem id="menu_custom_patterns" name="Customisation Patterns" parent="menu_consultant" action="action_custom_pattern" sequence="30"/>
+    <menuitem id="menu_limitations" name="Limitations" parent="menu_consultant" action="action_limitation" sequence="40"/>
+    
+    <!-- Import Menu (requires action from wizard) -->
+    <menuitem id="menu_import" name="Import Knowledge" parent="menu_ai_knowledge_root" action="action_import_wizard" sequence="90"/>
+</odoo>

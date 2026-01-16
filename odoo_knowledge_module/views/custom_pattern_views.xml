@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_custom_pattern_tree" model="ir.ui.view">
+        <field name="name">ai.custom.pattern.tree</field>
+        <field name="model">ai.custom.pattern</field>
+        <field name="arch" type="xml">
+            <list><field name="name"/><field name="pattern_type"/><field name="complexity"/><field name="estimated_days"/></list>
+        </field>
+    </record>
+    <record id="view_custom_pattern_form" model="ir.ui.view">
+        <field name="name">ai.custom.pattern.form</field>
+        <field name="model">ai.custom.pattern</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group><group><field name="name"/><field name="pattern_type"/></group>
+                    <group><field name="complexity"/><field name="estimated_days"/></group></group>
+                    <group string="Description"><field name="description" nolabel="1"/></group>
+                    <group string="When Needed"><field name="when_needed" nolabel="1"/></group>
+                    <group string="Technical Approach"><field name="technical_approach" nolabel="1"/></group>
+                    <group string="Code Example"><field name="code_example" nolabel="1"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_custom_pattern" model="ir.actions.act_window">
+        <field name="name">Customisation Patterns</field><field name="res_model">ai.custom.pattern</field><field name="view_mode">list,form</field>
+    </record>
+</odoo>
