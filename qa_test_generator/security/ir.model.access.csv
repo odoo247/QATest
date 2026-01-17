@@ -71,6 +71,3 @@ access_qa_fix_tests_wizard_user,qa.fix.tests.wizard user,model_qa_fix_tests_wiza
 access_qa_fix_tests_wizard_line_admin,qa.fix.tests.wizard.line admin,model_qa_fix_tests_wizard_line,group_qa_admin,1,1,1,1
 access_qa_fix_tests_wizard_line_manager,qa.fix.tests.wizard.line manager,model_qa_fix_tests_wizard_line,group_qa_manager,1,1,1,1
 access_qa_fix_tests_wizard_line_user,qa.fix.tests.wizard.line user,model_qa_fix_tests_wizard_line,group_qa_user,1,1,1,1
-access_qa_fix_pattern_admin,qa.fix.pattern admin,model_qa_fix_pattern,group_qa_admin,1,1,1,1
-access_qa_fix_pattern_manager,qa.fix.pattern manager,model_qa_fix_pattern,group_qa_manager,1,1,1,0
-access_qa_fix_pattern_user,qa.fix.pattern user,model_qa_fix_pattern,group_qa_user,1,0,0,0

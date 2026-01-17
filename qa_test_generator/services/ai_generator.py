@@ -11,12 +11,13 @@ _logger = logging.getLogger(__name__)
 class AIGenerator:
     """Service for generating Robot Framework tests using AI (Claude)"""
     
-    def __init__(self, config):
+    def __init__(self, config, env=None):
         """
         Initialize AI Generator with configuration
         
         Args:
             config: qa.test.ai.config record
+            env: Odoo environment (for KB access via ai.knowledge.service)
         """
         self.config = config
         self.api_key = config.api_key
@@ -24,6 +25,17 @@ class AIGenerator:
         self.endpoint = config.api_endpoint
         self.max_tokens = config.max_tokens
         self.temperature = config.temperature
+        self.env = env
+        
+        # Check if KB is available
+        self.kb_available = False
+        if env:
+            try:
+                env['ai.knowledge.service']
+                self.kb_available = True
+                _logger.info("Knowledge Base integration enabled")
+            except Exception as e:
+                _logger.debug(f"KB not available: {e}")
     
     def test_connection(self) -> bool:
         """Test connection to AI provider"""
@@ -292,7 +304,71 @@ Return your response in JSON format:
 
 Generate comprehensive, well-structured test cases that follow all the rules above.
 """
+        # Add Knowledge Base context if available
+        kb_context = self._get_kb_context(context)
+        if kb_context:
+            prompt += f"\n\n{kb_context}"
+        
         return prompt
+    
+    def _get_kb_context(self, context: Dict[str, Any]) -> str:
+        """Get additional context from Knowledge Base."""
+        if not self.kb_available or not self.env:
+            return ""
+        
+        try:
+            kb = self.env['ai.knowledge.service']
+        except:
+            return ""
+        
+        kb_sections = []
+        
+        # Get Odoo version from context or config
+        odoo_version = context.get('odoo_version', '19.0')
+        
+        # Get models being tested
+        models = []
+        analyzed_models = context.get('analyzed_models', '')
+        if analyzed_models:
+            # Extract model names from analysis text
+            import re
+            model_matches = re.findall(r'Model:\s*(\S+)', analyzed_models)
+            models = model_matches[:5]  # Limit to 5 models
+        
+        # 1. Get test context from KB
+        try:
+            test_context = kb.get_test_context(odoo_version, models, 'robot')
+            if test_context:
+                kb_sections.append(test_context)
+        except Exception as e:
+            _logger.debug(f"KB get_test_context failed: {e}")
+        
+        # 2. Get any relevant error patterns (if this is a re-generation after failure)
+        last_error = context.get('last_error', '')
+        if last_error:
+            try:
+                error_patterns = kb.get_error_context(
+                    last_error, 'robot_test', models[0] if models else None, odoo_version
+                )
+                if error_patterns:
+                    kb_sections.append(error_patterns)
+            except Exception as e:
+                _logger.debug(f"KB get_error_context failed: {e}")
+        
+        # 3. Get breaking changes if upgrading
+        from_version = context.get('from_version')
+        if from_version and from_version != odoo_version:
+            try:
+                breaking_context = kb.get_upgrade_context(from_version, odoo_version, models)
+                if breaking_context:
+                    kb_sections.append(breaking_context)
+            except Exception as e:
+                _logger.debug(f"KB get_upgrade_context failed: {e}")
+        
+        if kb_sections:
+            return "\n## KNOWLEDGE BASE CONTEXT\n\n" + "\n\n".join(kb_sections)
+        
+        return ""
     
     def _call_api(self, prompt: str) -> str:
         """Call the AI API and return the response"""

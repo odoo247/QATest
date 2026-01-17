@@ -158,10 +158,4 @@
               parent="menu_qa_test_config"
               action="action_qa_customer_server"
               sequence="60"/>
-    
-    <menuitem id="menu_qa_fix_pattern"
-              name="Fix Patterns"
-              parent="menu_qa_test_config"
-              action="action_qa_fix_pattern"
-              sequence="70"/>
 </odoo>

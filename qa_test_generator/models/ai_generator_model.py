@@ -20,14 +20,15 @@ class QAAIGenerator(models.AbstractModel):
 
     @api.model
     def _get_generator(self):
-        """Get AIGenerator instance"""
+        """Get AIGenerator instance with KB integration"""
         from ..services.ai_generator import AIGenerator
         
         config = self._get_ai_config()
         if not config:
             raise Exception("No AI configuration found. Please configure AI settings first.")
         
-        return AIGenerator(config)
+        # Pass env for Knowledge Base integration
+        return AIGenerator(config, env=self.env)
 
     @api.model
     def generate_test_scenarios_from_code(self, model_analysis,

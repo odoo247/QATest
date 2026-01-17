@@ -11,6 +11,7 @@ _logger = logging.getLogger(__name__)
 class QAFixTestsWizard(models.TransientModel):
     _name = 'qa.fix.tests.wizard'
     _description = 'Fix Failed Tests Wizard'
+    _inherit = ['ai.kb.mixin']
 
     # Source selection
     source_type = fields.Selection([
@@ -189,13 +190,13 @@ class QAFixTestsWizard(models.TransientModel):
             except:
                 pass
         
-        # Get relevant fix patterns from knowledge base
-        FixPattern = self.env['qa.fix.pattern']
-        patterns_prompt = FixPattern.get_patterns_for_prompt(error_message, limit=5)
-        
-        # Mark patterns as used
-        matching_patterns = FixPattern.find_matching_patterns(error_message)
-        matching_patterns.action_increment_use()
+        # Get relevant error patterns from central Knowledge Base
+        patterns_prompt = self.kb_get_error_patterns(
+            error_message, 
+            task_type='robot_test',
+            odoo_version=odoo_version if odoo_version != 'unknown' else None,
+            limit=5
+        )
         
         prompt = f"""Analyze this failed Robot Framework test and provide a COMPLETE, SELF-CONTAINED fix.
 

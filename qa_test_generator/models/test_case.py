@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 class QATestCase(models.Model):
     _name = 'qa.test.case'
     _description = 'Test Case'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'ai.kb.mixin']
     _order = 'sequence, id'
 
     name = fields.Char(string='Test Case Name', required=True, tracking=True)
@@ -341,7 +341,7 @@ class QATestCase(models.Model):
 
     def action_save_fix_to_knowledge(self):
         """
-        Save the verified fix to knowledge base.
+        Save the verified fix to central Knowledge Base.
         ONLY called after: 1) Fix applied, 2) Test passed, 3) Human clicks this button
         """
         self.ensure_one()
@@ -360,17 +360,25 @@ class QATestCase(models.Model):
             if match:
                 model_name = match.group(1)
         
-        # Create verified pattern
-        FixPattern = self.env['qa.fix.pattern']
-        pattern = FixPattern.create_verified_pattern(
-            error_message=self.pending_fix_error,
-            problem=f"Error: {self.pending_fix_error[:200]}",
-            solution=self.pending_fix_analysis or 'Fix verified by testing',
-            wrong_code=self._extract_code_snippet(self.pending_fix_original_code),
-            correct_code=self._extract_code_snippet(self.robot_code),
+        wrong_code = self._extract_code_snippet(self.pending_fix_original_code)
+        correct_code = self._extract_code_snippet(self.robot_code)
+        
+        # Save to CENTRAL Knowledge Base (via mixin - shared with all agents)
+        error_id = self.kb_record_error(
+            odoo_version='19.0',
+            task_type='robot_test',
+            error_text=self.pending_fix_error,
+            wrong_code=wrong_code or '',
             model_name=model_name,
-            test_case=self,
         )
+        
+        kb_synced = False
+        if error_id:
+            kb_synced = self.kb_record_fix(
+                error_id=error_id,
+                correct_code=correct_code or '',
+                explanation=self.pending_fix_analysis or 'Fix verified by testing',
+            )
         
         # Clear pending fix
         self.write({
@@ -380,13 +388,13 @@ class QATestCase(models.Model):
             'pending_fix_verified': True,
         })
         
-        if pattern:
+        if kb_synced:
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
                     'title': 'Fix Saved to Knowledge Base!',
-                    'message': f'Pattern "{pattern.name}" saved. AI will use this for similar errors.',
+                    'message': 'Pattern saved to central KB. All agents can now use this fix.',
                     'type': 'success',
                     'sticky': False,
                 }
@@ -396,9 +404,9 @@ class QATestCase(models.Model):
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
-                    'title': 'Pattern Updated',
-                    'message': 'Existing pattern was updated with this success.',
-                    'type': 'info',
+                    'title': 'Save Failed',
+                    'message': 'Could not save to Knowledge Base. Check logs.',
+                    'type': 'warning',
                 }
             }
 
