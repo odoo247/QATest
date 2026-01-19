@@ -1,6 +1,6 @@
 {
     'name': 'AI Knowledge Base',
-    'version': '19.0.2.0.0',
+    'version': '18.0.2.0.0',
     'category': 'Technical',
     'summary': 'Knowledge base for AI agents with source code analysis',
     'description': '''
