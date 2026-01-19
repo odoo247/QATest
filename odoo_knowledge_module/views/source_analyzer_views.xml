@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================ -->
+    <!-- AI ODOO SOURCE (Version Source Paths)                        -->
+    <!-- ============================================================ -->
+    
+    <record id="view_ai_odoo_source_tree" model="ir.ui.view">
+        <field name="name">ai.odoo.source.tree</field>
+        <field name="model">ai.odoo.source</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="version"/>
+                <field name="source_type"/>
+                <field name="source_path"/>
+                <field name="state" widget="badge" 
+                       decoration-success="state == 'done'"
+                       decoration-warning="state == 'analyzing'"
+                       decoration-danger="state == 'error'"/>
+                <field name="module_count"/>
+                <field name="model_count"/>
+                <field name="field_count"/>
+                <field name="last_analyzed"/>
+            </tree>
+        </field>
+    </record>
+    
+    <record id="view_ai_odoo_source_form" model="ir.ui.view">
+        <field name="name">ai.odoo.source.form</field>
+        <field name="model">ai.odoo.source</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_analyze" type="object" string="Analyze Source"
+                            class="btn-primary" invisible="state == 'analyzing'"/>
+                    <button name="action_view_data" type="object" string="View Parsed Data"
+                            invisible="state != 'done'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Source Configuration">
+                            <field name="version"/>
+                            <field name="source_type" widget="radio"/>
+                            <field name="source_path" invisible="source_type != 'local'"
+                                   placeholder="/opt/odoo/odoo/addons"/>
+                            <field name="git_url" invisible="source_type != 'git'"/>
+                            <field name="git_branch" invisible="source_type != 'git'"/>
+                        </group>
+                        <group string="Analysis Results">
+                            <field name="last_analyzed"/>
+                            <field name="module_count"/>
+                            <field name="model_count"/>
+                            <field name="field_count"/>
+                            <field name="method_count"/>
+                        </group>
+                    </group>
+                    <group invisible="not error_message">
+                        <field name="error_message" readonly="1"/>
+                    </group>
+                    <notebook invisible="not parsed_data or context.get('show_parsed_data')">
+                        <page string="Parsed Data (JSON)" invisible="not context.get('show_parsed_data')">
+                            <field name="parsed_data" readonly="1" widget="ace" options="{'mode': 'json'}"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <record id="action_ai_odoo_source" model="ir.actions.act_window">
+        <field name="name">Odoo Source Versions</field>
+        <field name="res_model">ai.odoo.source</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add Odoo Source Versions
+            </p>
+            <p>
+                Point to local Odoo source directories for each version you want to analyze.
+                Example paths:
+                <ul>
+                    <li>/opt/odoo17/odoo/addons</li>
+                    <li>/opt/odoo18/odoo/addons</li>
+                    <li>/opt/odoo19/odoo/addons</li>
+                </ul>
+            </p>
+        </field>
+    </record>
+    
+    <!-- ============================================================ -->
+    <!-- AI SOURCE ANALYZER (Version Comparison)                      -->
+    <!-- ============================================================ -->
+    
+    <record id="view_ai_source_analyzer_tree" model="ir.ui.view">
+        <field name="name">ai.source.analyzer.tree</field>
+        <field name="model">ai.source.analyzer</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="from_version"/>
+                <field name="to_version"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'done'"
+                       decoration-info="state == 'review'"/>
+                <field name="total_changes"/>
+                <field name="approved_count"/>
+            </tree>
+        </field>
+    </record>
+    
+    <record id="view_ai_source_analyzer_form" model="ir.ui.view">
+        <field name="name">ai.source.analyzer.form</field>
+        <field name="model">ai.source.analyzer</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_compare" type="object" string="Compare Versions"
+                            class="btn-primary" invisible="state not in ('draft',)"/>
+                    <button name="action_approve_all" type="object" string="Approve High Confidence"
+                            invisible="state != 'review'"/>
+                    <button name="action_create_kb_entries" type="object" 
+                            string="Create KB Entries" class="btn-success"
+                            invisible="state != 'review' or approved_count == 0"
+                            confirm="Create breaking change entries in Knowledge Base?"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-exchange">
+                            <field name="total_changes" widget="statinfo" string="Changes"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-check">
+                            <field name="approved_count" widget="statinfo" string="Approved"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="from_version_id" options="{'no_create': True}"/>
+                            <field name="from_version" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="to_version_id" options="{'no_create': True}"/>
+                            <field name="to_version" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Detected Changes" name="changes">
+                            <field name="change_ids">
+                                <tree editable="bottom" decoration-success="approved" 
+                                      decoration-muted="rejected">
+                                    <field name="category"/>
+                                    <field name="model_name"/>
+                                    <field name="field_name" optional="show"/>
+                                    <field name="method_name" optional="show"/>
+                                    <field name="description"/>
+                                    <field name="confidence" widget="badge"
+                                           decoration-success="confidence == 'high'"
+                                           decoration-warning="confidence == 'medium'"
+                                           decoration-danger="confidence == 'low'"/>
+                                    <field name="approved" widget="boolean_toggle"/>
+                                    <field name="rejected" optional="hide"/>
+                                    <button name="action_approve" type="object" 
+                                            icon="fa-check" title="Approve"/>
+                                    <button name="action_reject" type="object" 
+                                            icon="fa-times" title="Reject"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Code Changes" name="code">
+                            <field name="change_ids">
+                                <tree>
+                                    <field name="category"/>
+                                    <field name="model_name"/>
+                                    <field name="old_code"/>
+                                    <field name="new_code"/>
+                                    <field name="approved"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <record id="action_ai_source_analyzer" model="ir.actions.act_window">
+        <field name="name">Version Comparisons</field>
+        <field name="res_model">ai.source.analyzer</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Compare Odoo Versions
+            </p>
+            <p>
+                Select two analyzed source versions to automatically detect breaking changes.
+                Detected changes can be reviewed and added to the Knowledge Base.
+            </p>
+        </field>
+    </record>
+    
+    <!-- ============================================================ -->
+    <!-- MENU ITEMS                                                   -->
+    <!-- ============================================================ -->
+    
+    <menuitem id="menu_source_analyzer_root"
+              name="Source Analyzer"
+              parent="menu_ai_kb_root"
+              sequence="5"/>
+    
+    <menuitem id="menu_ai_odoo_source"
+              name="Odoo Sources"
+              parent="menu_source_analyzer_root"
+              action="action_ai_odoo_source"
+              sequence="10"/>
+    
+    <menuitem id="menu_ai_source_analyzer"
+              name="Version Comparisons"
+              parent="menu_source_analyzer_root"
+              action="action_ai_source_analyzer"
+              sequence="20"/>
+
+</odoo>

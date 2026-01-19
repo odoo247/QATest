@@ -16,3 +16,9 @@ access_custom_pattern_admin,ai.custom.pattern.admin,model_ai_custom_pattern,base
 access_limitation_user,ai.limitation.user,model_ai_limitation,base.group_user,1,0,0,0
 access_limitation_admin,ai.limitation.admin,model_ai_limitation,base.group_system,1,1,1,1
 access_import_wizard,ai.import.wizard,model_ai_import_wizard,base.group_system,1,1,1,1
+access_odoo_source_user,ai.odoo.source.user,model_ai_odoo_source,base.group_user,1,0,0,0
+access_odoo_source_admin,ai.odoo.source.admin,model_ai_odoo_source,base.group_system,1,1,1,1
+access_source_analyzer_user,ai.source.analyzer.user,model_ai_source_analyzer,base.group_user,1,0,0,0
+access_source_analyzer_admin,ai.source.analyzer.admin,model_ai_source_analyzer,base.group_system,1,1,1,1
+access_source_analyzer_change_user,ai.source.analyzer.change.user,model_ai_source_analyzer_change,base.group_user,1,0,0,0
+access_source_analyzer_change_admin,ai.source.analyzer.change.admin,model_ai_source_analyzer_change,base.group_system,1,1,1,1

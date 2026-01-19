@@ -16,6 +16,60 @@ Knowledge base for AI agents to assist with Odoo development and consulting.
 - **Customisation Patterns**: Development patterns
 - **Limitations**: Known Odoo limitations
 
+### Source Code Analyzer (NEW)
+- **Auto-parse** Odoo source code from multiple versions
+- **Auto-detect** breaking changes (field renames, removals, method changes)
+- **Extract schemas** automatically from source
+- **Compare versions** and review changes before adding to KB
+
+## Source Code Analyzer - Usage
+
+### Step 1: Add Odoo Source Versions
+
+Go to **AI Knowledge Base > Source Analyzer > Odoo Sources**
+
+Create records pointing to your Odoo source directories:
+
+| Version | Path |
+|---------|------|
+| 17.0 | `/opt/odoo17/odoo/addons` |
+| 18.0 | `/opt/odoo18/odoo/addons` |
+| 19.0 | `/opt/odoo19/odoo/addons` |
+
+You can also include enterprise addons:
+| Version | Path |
+|---------|------|
+| 19.0 EE | `/opt/odoo19/enterprise` |
+
+### Step 2: Analyze Each Version
+
+Click **"Analyze Source"** on each version. The analyzer will:
+
+1. Find all modules (look for `__manifest__.py`)
+2. Parse Python files using AST
+3. Extract: models, fields, methods, decorators
+4. Store results in JSON format
+
+### Step 3: Compare Versions
+
+Go to **AI Knowledge Base > Source Analyzer > Version Comparisons**
+
+1. Create new comparison (e.g., 17.0 → 18.0)
+2. Click **"Compare Versions"**
+3. Review detected changes:
+   - Field renamed
+   - Field removed
+   - Field type changed
+   - Method renamed
+   - Method removed
+   - Method signature changed
+
+### Step 4: Approve and Create KB Entries
+
+1. Review each change (high confidence = usually correct)
+2. Click **"Approve High Confidence"** or approve individually
+3. Click **"Create KB Entries"** to add to Knowledge Base
+
 ## REST API
 
 ```bash
@@ -65,4 +119,25 @@ result = service.quick_check('need approval workflow')
 # Record errors for learning
 error = service.record_error('19.0', 'upgrade', 'error msg', 'bad code')
 service.record_fix(error.id, 'good code', 'explanation')
+```
+
+## Using the Mixin in Your Agent
+
+```python
+class MyAgent(models.Model):
+    _name = 'my.agent'
+    _inherit = ['mail.thread', 'ai.kb.mixin']  # Add mixin
+    
+    def do_something(self):
+        # Get context for AI prompts
+        context = self.kb_get_upgrade_context('17.0', '19.0', ['sale.order'])
+        
+        # Find known fixes for an error
+        fixes = self.kb_get_error_patterns(error_message, 'upgrade')
+        
+        # Record a new error
+        error_id = self.kb_record_error('19.0', 'upgrade', error_msg, wrong_code)
+        
+        # After verifying fix works, save it
+        self.kb_record_fix(error_id, correct_code, 'Explanation')
 ```
