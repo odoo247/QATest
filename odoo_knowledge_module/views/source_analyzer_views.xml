@@ -8,7 +8,7 @@
         <field name="name">ai.odoo.source.tree</field>
         <field name="model">ai.odoo.source</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="version"/>
                 <field name="source_type"/>
                 <field name="source_path"/>
@@ -20,7 +20,7 @@
                 <field name="model_count"/>
                 <field name="field_count"/>
                 <field name="last_analyzed"/>
-            </tree>
+            </list>
         </field>
     </record>
     
@@ -75,7 +75,7 @@
     <record id="action_ai_odoo_source" model="ir.actions.act_window">
         <field name="name">Odoo Source Versions</field>
         <field name="res_model">ai.odoo.source</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Add Odoo Source Versions
@@ -100,7 +100,7 @@
         <field name="name">ai.source.analyzer.tree</field>
         <field name="model">ai.source.analyzer</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name"/>
                 <field name="from_version"/>
                 <field name="to_version"/>
@@ -109,7 +109,7 @@
                        decoration-info="state == 'review'"/>
                 <field name="total_changes"/>
                 <field name="approved_count"/>
-            </tree>
+            </list>
         </field>
     </record>
     
@@ -156,7 +156,7 @@
                     <notebook>
                         <page string="Detected Changes" name="changes">
                             <field name="change_ids">
-                                <tree editable="bottom" decoration-success="approved" 
+                                <list editable="bottom" decoration-success="approved" 
                                       decoration-muted="rejected">
                                     <field name="category"/>
                                     <field name="model_name"/>
@@ -173,18 +173,18 @@
                                             icon="fa-check" title="Approve"/>
                                     <button name="action_reject" type="object" 
                                             icon="fa-times" title="Reject"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                         <page string="Code Changes" name="code">
                             <field name="change_ids">
-                                <tree>
+                                <list>
                                     <field name="category"/>
                                     <field name="model_name"/>
                                     <field name="old_code"/>
                                     <field name="new_code"/>
                                     <field name="approved"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>
@@ -196,7 +196,7 @@
     <record id="action_ai_source_analyzer" model="ir.actions.act_window">
         <field name="name">Version Comparisons</field>
         <field name="res_model">ai.source.analyzer</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Compare Odoo Versions

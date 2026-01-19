@@ -22,6 +22,14 @@
             <field name="description">@api.multi removed (now default)</field>
             <field name="old_code">@api.multi</field><field name="new_code"># Remove decorator</field>
         </record>
+        <record id="bc_tree_to_list" model="ai.breaking.change">
+            <field name="from_version">17.0</field><field name="to_version">18.0</field>
+            <field name="category">view_change</field>
+            <field name="description">View type 'tree' renamed to 'list' in XML views</field>
+            <field name="old_code">&lt;tree&gt;...&lt;/tree&gt;</field>
+            <field name="new_code">&lt;list&gt;...&lt;/list&gt;</field>
+            <field name="migration_hint">Replace all &lt;tree&gt; tags with &lt;list&gt; and view_mode="tree,form" with "list,form"</field>
+        </record>
         
         <!-- Features -->
         <record id="feat_quotations" model="ai.module.feature">
