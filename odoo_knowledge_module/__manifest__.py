@@ -52,6 +52,7 @@ Usage:
         'views/custom_pattern_views.xml',
         'views/limitation_views.xml',
         'views/source_analyzer_views.xml',
+        'views/openupgrade_importer_views.xml',
         # 4. Wizard with action
         'wizards/import_wizard_views.xml',
         # 5. Menus that reference actions (LAST)

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================ -->
+    <!-- OPENUPGRADE IMPORTER                                         -->
+    <!-- ============================================================ -->
+    
+    <record id="view_openupgrade_importer_form" model="ir.ui.view">
+        <field name="name">ai.openupgrade.importer.form</field>
+        <field name="model">ai.openupgrade.importer</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_parse_preview" type="object" 
+                            string="Parse &amp; Preview" class="btn-primary"
+                            invisible="state != 'draft' or (source_type == 'github' and not github_path)"/>
+                    <button name="action_import_from_github_clone" type="object"
+                            string="Import from Clone" class="btn-primary"
+                            invisible="source_type != 'github' or not github_path"/>
+                    <button name="action_import" type="object" 
+                            string="Import Selected" class="btn-success"
+                            invisible="state not in ('draft',) or not preview_ids"
+                            confirm="Import selected changes to Knowledge Base?"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Import Name"/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group string="Source">
+                            <field name="source_type" widget="radio"/>
+                            <field name="to_version"/>
+                            <field name="module_filter" placeholder="sale,account,stock (empty = all)"/>
+                        </group>
+                        <group string="Results" invisible="state == 'draft' and not preview_ids">
+                            <field name="imported_count"/>
+                            <field name="skipped_count"/>
+                        </group>
+                    </group>
+                    
+                    <!-- File upload -->
+                    <group invisible="source_type != 'file'">
+                        <field name="file_data" filename="file_name"/>
+                        <field name="file_name" invisible="1"/>
+                    </group>
+                    
+                    <!-- Text paste -->
+                    <group invisible="source_type != 'text'" string="Paste Analysis Text">
+                        <field name="analysis_text" nolabel="1" 
+                               placeholder="Paste contents of openupgrade_analysis.txt here..."/>
+                    </group>
+                    
+                    <!-- GitHub clone -->
+                    <group invisible="source_type != 'github'">
+                        <field name="github_path" 
+                               placeholder="/opt/OpenUpgrade (clone of https://github.com/OCA/OpenUpgrade)"/>
+                    </group>
+                    
+                    <!-- Instructions -->
+                    <div class="alert alert-info" role="alert" invisible="preview_ids">
+                        <h4><i class="fa fa-info-circle"/> How to Import OpenUpgrade Analysis</h4>
+                        <p><strong>Option 1: Upload File</strong></p>
+                        <ol>
+                            <li>Go to <a href="https://github.com/OCA/OpenUpgrade" target="_blank">OCA/OpenUpgrade</a></li>
+                            <li>Navigate to: <code>openupgrade_scripts/scripts/{module}/{version}/openupgrade_analysis.txt</code></li>
+                            <li>Download and upload the file here</li>
+                        </ol>
+                        <p><strong>Option 2: Clone Repository</strong></p>
+                        <ol>
+                            <li><code>git clone https://github.com/OCA/OpenUpgrade /opt/OpenUpgrade</code></li>
+                            <li><code>cd /opt/OpenUpgrade &amp;&amp; git checkout 18.0</code></li>
+                            <li>Enter path: <code>/opt/OpenUpgrade</code></li>
+                            <li>Click "Import from Clone" to import ALL modules</li>
+                        </ol>
+                    </div>
+                    
+                    <!-- Preview -->
+                    <notebook invisible="not preview_ids">
+                        <page string="Preview Changes" name="preview">
+                            <field name="preview_ids">
+                                <list editable="bottom" decoration-muted="not selected">
+                                    <field name="selected" widget="boolean_toggle"/>
+                                    <field name="category" widget="badge"/>
+                                    <field name="module"/>
+                                    <field name="model_name"/>
+                                    <field name="field_name" optional="show"/>
+                                    <field name="change_type"/>
+                                    <field name="description"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Import Log" name="log" invisible="not import_log">
+                            <field name="import_log" readonly="1"/>
+                        </page>
+                    </notebook>
+                    
+                    <field name="error_message" invisible="not error_message" readonly="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <record id="view_openupgrade_importer_list" model="ir.ui.view">
+        <field name="name">ai.openupgrade.importer.list</field>
+        <field name="model">ai.openupgrade.importer</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="to_version"/>
+                <field name="source_type"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'done'"
+                       decoration-info="state == 'importing'"
+                       decoration-danger="state == 'error'"/>
+                <field name="imported_count"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+    
+    <record id="action_openupgrade_importer" model="ir.actions.act_window">
+        <field name="name">OpenUpgrade Importer</field>
+        <field name="res_model">ai.openupgrade.importer</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Import Breaking Changes from OpenUpgrade
+            </p>
+            <p>
+                Import breaking changes automatically from the OCA OpenUpgrade project's analysis files.
+                This gives you access to thousands of documented field and method changes between Odoo versions.
+            </p>
+        </field>
+    </record>
+    
+    <!-- Add to Source Analyzer menu -->
+    <menuitem id="menu_openupgrade_importer"
+              name="OpenUpgrade Importer"
+              parent="menu_source_analyzer_root"
+              action="action_openupgrade_importer"
+              sequence="30"/>
+
+</odoo>

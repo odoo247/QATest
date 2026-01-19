@@ -9,3 +9,4 @@ from . import limitation
 from . import knowledge_service
 from . import kb_mixin
 from . import source_analyzer
+from . import openupgrade_importer

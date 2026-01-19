@@ -22,6 +22,43 @@ Knowledge base for AI agents to assist with Odoo development and consulting.
 - **Extract schemas** automatically from source
 - **Compare versions** and review changes before adding to KB
 
+### OpenUpgrade Importer (NEW)
+- **Import from OCA** analysis files directly
+- **Thousands of changes** documented by the community
+- **Preview and select** which changes to import
+- **Bulk import** from a local OpenUpgrade clone
+
+## OpenUpgrade Importer - Usage
+
+The fastest way to populate your KB with breaking changes!
+
+### Option 1: Upload Analysis File
+
+1. Go to **AI Knowledge Base > Source Analyzer > OpenUpgrade Importer**
+2. Select "Upload File" 
+3. Download an analysis file from [OCA/OpenUpgrade](https://github.com/OCA/OpenUpgrade)
+   - Path: `openupgrade_scripts/scripts/{module}/{version}/openupgrade_analysis.txt`
+4. Upload and click "Parse & Preview"
+5. Review changes and click "Import Selected"
+
+### Option 2: Clone and Bulk Import
+
+```bash
+# Clone the OpenUpgrade repository
+git clone https://github.com/OCA/OpenUpgrade /opt/OpenUpgrade
+cd /opt/OpenUpgrade
+git checkout 18.0  # or 17.0, 19.0, etc.
+```
+
+Then in Odoo:
+1. Go to **AI Knowledge Base > Source Analyzer > OpenUpgrade Importer**
+2. Select "GitHub (Manual Clone)"
+3. Enter path: `/opt/OpenUpgrade`
+4. Select target version (e.g., 18.0)
+5. Click "Import from Clone"
+
+This imports **ALL** analysis files from all modules!
+
 ## Source Code Analyzer - Usage
 
 ### Step 1: Add Odoo Source Versions

@@ -22,3 +22,5 @@ access_source_analyzer_user,ai.source.analyzer.user,model_ai_source_analyzer,bas
 access_source_analyzer_admin,ai.source.analyzer.admin,model_ai_source_analyzer,base.group_system,1,1,1,1
 access_source_analyzer_change_user,ai.source.analyzer.change.user,model_ai_source_analyzer_change,base.group_user,1,0,0,0
 access_source_analyzer_change_admin,ai.source.analyzer.change.admin,model_ai_source_analyzer_change,base.group_system,1,1,1,1
+access_openupgrade_importer_admin,ai.openupgrade.importer.admin,model_ai_openupgrade_importer,base.group_system,1,1,1,1
+access_openupgrade_importer_line_admin,ai.openupgrade.importer.line.admin,model_ai_openupgrade_importer_line,base.group_system,1,1,1,1
