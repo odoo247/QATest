@@ -125,7 +125,7 @@
                 <field name="total_records_imported"/>
                 <field name="total_errors"/>
                 <templates>
-                    <t t-name="kanban-card">
+                    <t t-name="card">
                         <div class="oe_kanban_content">
                             <strong class="o_kanban_record_title">
                                 <field name="name"/>

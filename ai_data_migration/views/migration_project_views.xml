@@ -174,7 +174,7 @@
                 <field name="error_count"/>
                 <field name="progress"/>
                 <templates>
-                    <t t-name="kanban-card">
+                    <t t-name="card">
                         <div class="oe_kanban_content">
                             <strong class="o_kanban_record_title">
                                 <field name="name"/>
