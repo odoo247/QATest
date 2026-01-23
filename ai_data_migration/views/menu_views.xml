@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root Menu -->
+    <menuitem id="menu_migration_root"
+              name="Data Migration"
+              web_icon="ai_data_migration,static/description/icon.png"
+              sequence="100"/>
+    
+    <!-- Main Menu Items -->
+    <menuitem id="menu_migration_projects"
+              name="Migration Projects"
+              parent="menu_migration_root"
+              action="action_migration_project"
+              sequence="10"/>
+    
+    <menuitem id="menu_migration_templates"
+              name="Templates"
+              parent="menu_migration_root"
+              action="action_migration_template"
+              sequence="20"/>
+    
+    <!-- Configuration Menu -->
+    <menuitem id="menu_migration_config"
+              name="Configuration"
+              parent="menu_migration_root"
+              sequence="90"/>
+    
+    <menuitem id="menu_migration_transformation_rules"
+              name="Transformation Rules"
+              parent="menu_migration_config"
+              action="action_transformation_rule"
+              sequence="10"/>
+    
+    <menuitem id="menu_migration_template_tags"
+              name="Template Tags"
+              parent="menu_migration_config"
+              action="action_migration_template_tag"
+              sequence="20"/>
+    
+    <menuitem id="menu_migration_logs"
+              name="Migration Logs"
+              parent="menu_migration_config"
+              action="action_migration_log"
+              sequence="30"/>
+    
+    <!-- Quick Import Action -->
+    <record id="action_quick_import_wizard" model="ir.actions.act_window">
+        <field name="name">Quick Import</field>
+        <field name="res_model">migration.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    
+    <menuitem id="menu_quick_import"
+              name="Quick Import"
+              parent="menu_migration_root"
+              action="action_quick_import_wizard"
+              sequence="5"/>
+</odoo>

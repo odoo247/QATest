@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- String Transformations -->
+        <record id="transform_uppercase" model="migration.transformation.rule">
+            <field name="name">Uppercase</field>
+            <field name="sequence">10</field>
+            <field name="transformation_type">uppercase</field>
+            <field name="description">Convert text to UPPERCASE</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_lowercase" model="migration.transformation.rule">
+            <field name="name">Lowercase</field>
+            <field name="sequence">11</field>
+            <field name="transformation_type">lowercase</field>
+            <field name="description">Convert text to lowercase</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_titlecase" model="migration.transformation.rule">
+            <field name="name">Title Case</field>
+            <field name="sequence">12</field>
+            <field name="transformation_type">titlecase</field>
+            <field name="description">Convert Text To Title Case</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_trim" model="migration.transformation.rule">
+            <field name="name">Trim Whitespace</field>
+            <field name="sequence">13</field>
+            <field name="transformation_type">trim</field>
+            <field name="description">Remove leading and trailing whitespace</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <!-- Numeric Transformations -->
+        <record id="transform_clean_numeric" model="migration.transformation.rule">
+            <field name="name">Clean Numeric</field>
+            <field name="sequence">20</field>
+            <field name="transformation_type">clean_numeric</field>
+            <field name="description">Remove currency symbols and non-numeric characters</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_round_2" model="migration.transformation.rule">
+            <field name="name">Round to 2 Decimals</field>
+            <field name="sequence">21</field>
+            <field name="transformation_type">round</field>
+            <field name="transformation_params">{"decimals": 2}</field>
+            <field name="description">Round number to 2 decimal places</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_abs" model="migration.transformation.rule">
+            <field name="name">Absolute Value</field>
+            <field name="sequence">22</field>
+            <field name="transformation_type">abs</field>
+            <field name="description">Convert to absolute (positive) value</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <!-- Date Transformations -->
+        <record id="transform_date_dmy_to_ymd" model="migration.transformation.rule">
+            <field name="name">Date: DD/MM/YYYY to YYYY-MM-DD</field>
+            <field name="sequence">30</field>
+            <field name="transformation_type">date_format</field>
+            <field name="transformation_params">{"input_format": "%d/%m/%Y", "output_format": "%Y-%m-%d"}</field>
+            <field name="description">Convert date from DD/MM/YYYY to Odoo format</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_date_mdy_to_ymd" model="migration.transformation.rule">
+            <field name="name">Date: MM/DD/YYYY to YYYY-MM-DD</field>
+            <field name="sequence">31</field>
+            <field name="transformation_type">date_format</field>
+            <field name="transformation_params">{"input_format": "%m/%d/%Y", "output_format": "%Y-%m-%d"}</field>
+            <field name="description">Convert date from MM/DD/YYYY to Odoo format</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_datetime_to_date" model="migration.transformation.rule">
+            <field name="name">DateTime to Date</field>
+            <field name="sequence">32</field>
+            <field name="transformation_type">date_format</field>
+            <field name="transformation_params">{"input_format": "%Y-%m-%d %H:%M:%S", "output_format": "%Y-%m-%d"}</field>
+            <field name="description">Extract date from datetime</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <!-- Boolean Mappings -->
+        <record id="transform_bool_yes_no" model="migration.transformation.rule">
+            <field name="name">Yes/No to Boolean</field>
+            <field name="sequence">40</field>
+            <field name="transformation_type">value_map</field>
+            <field name="transformation_params">{"mapping": {"Yes": "True", "No": "False", "Y": "True", "N": "False", "yes": "True", "no": "False"}, "default": "False"}</field>
+            <field name="description">Convert Yes/No values to boolean</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_bool_1_0" model="migration.transformation.rule">
+            <field name="name">1/0 to Boolean</field>
+            <field name="sequence">41</field>
+            <field name="transformation_type">value_map</field>
+            <field name="transformation_params">{"mapping": {"1": "True", "0": "False"}, "default": "False"}</field>
+            <field name="description">Convert 1/0 values to boolean</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <!-- Common Field Cleanups -->
+        <record id="transform_phone_cleanup" model="migration.transformation.rule">
+            <field name="name">Phone Number Cleanup</field>
+            <field name="sequence">50</field>
+            <field name="transformation_type">regex_replace</field>
+            <field name="transformation_params">{"pattern": "[^0-9+]", "replace": ""}</field>
+            <field name="description">Remove non-numeric characters from phone numbers (keep +)</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_email_lowercase" model="migration.transformation.rule">
+            <field name="name">Email Lowercase</field>
+            <field name="sequence">51</field>
+            <field name="transformation_type">lowercase</field>
+            <field name="description">Convert email to lowercase</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <!-- Australian Specific -->
+        <record id="transform_au_state_abbrev" model="migration.transformation.rule">
+            <field name="name">AU State Full to Abbreviation</field>
+            <field name="sequence">60</field>
+            <field name="transformation_type">value_map</field>
+            <field name="transformation_params">{
+                "mapping": {
+                    "New South Wales": "NSW",
+                    "Victoria": "VIC",
+                    "Queensland": "QLD",
+                    "South Australia": "SA",
+                    "Western Australia": "WA",
+                    "Tasmania": "TAS",
+                    "Northern Territory": "NT",
+                    "Australian Capital Territory": "ACT"
+                },
+                "case_insensitive": true
+            }</field>
+            <field name="description">Convert Australian state names to abbreviations</field>
+            <field name="is_system">True</field>
+        </record>
+
+        <record id="transform_au_date" model="migration.transformation.rule">
+            <field name="name">AU Date Format (DD/MM/YYYY)</field>
+            <field name="sequence">61</field>
+            <field name="transformation_type">date_format</field>
+            <field name="transformation_params">{"input_format": "%d/%m/%Y", "output_format": "%Y-%m-%d"}</field>
+            <field name="description">Convert Australian date format to Odoo</field>
+            <field name="is_system">True</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,299 @@
+/* AI Data Migration Toolkit Styles */
+
+/* Migration Project Card */
+.o_migration_project_card {
+    border-radius: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.o_migration_project_card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Progress Indicators */
+.migration-progress-container {
+    position: relative;
+    height: 24px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.migration-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+.migration-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 600;
+    font-size: 12px;
+    color: #333;
+}
+
+/* AI Confidence Indicators */
+.ai-confidence-high {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.ai-confidence-medium {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.ai-confidence-low {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Mapping Table Enhancements */
+.o_migration_mapping_table .o_field_widget {
+    min-width: 150px;
+}
+
+.o_migration_mapping_table tr.ai-suggested {
+    background-color: rgba(40, 167, 69, 0.05);
+}
+
+.o_migration_mapping_table tr.unmapped {
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+/* Data Preview Panel */
+.migration-preview-panel {
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.migration-preview-panel pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Log Viewer Styles */
+.migration-log-entry {
+    padding: 8px 12px;
+    border-left: 3px solid #6c757d;
+    margin-bottom: 4px;
+    background: #fff;
+}
+
+.migration-log-entry.log-error {
+    border-left-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+}
+
+.migration-log-entry.log-warning {
+    border-left-color: #ffc107;
+    background: rgba(255, 193, 7, 0.05);
+}
+
+.migration-log-entry.log-success {
+    border-left-color: #28a745;
+    background: rgba(40, 167, 69, 0.05);
+}
+
+.migration-log-entry.log-info {
+    border-left-color: #17a2b8;
+}
+
+.migration-log-timestamp {
+    font-size: 11px;
+    color: #6c757d;
+    margin-right: 10px;
+}
+
+.migration-log-message {
+    font-size: 13px;
+}
+
+/* AI Mapping Wizard */
+.o_migration_ai_wizard {
+    min-height: 400px;
+}
+
+.o_migration_ai_wizard .ai-analyzing {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.o_migration_ai_wizard .ai-analyzing i {
+    font-size: 48px;
+    color: #007bff;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Data Quality Report */
+.data-quality-report {
+    padding: 15px;
+}
+
+.data-quality-score {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.data-quality-score.score-high {
+    color: #28a745;
+}
+
+.data-quality-score.score-medium {
+    color: #ffc107;
+}
+
+.data-quality-score.score-low {
+    color: #dc3545;
+}
+
+.data-quality-issues {
+    margin-top: 15px;
+}
+
+.data-quality-issue {
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    background: #f8f9fa;
+}
+
+.data-quality-issue.severity-high {
+    border-left: 3px solid #dc3545;
+}
+
+.data-quality-issue.severity-medium {
+    border-left: 3px solid #ffc107;
+}
+
+.data-quality-issue.severity-low {
+    border-left: 3px solid #6c757d;
+}
+
+/* Template Cards */
+.migration-template-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.migration-template-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.migration-template-card.selected {
+    border-color: #007bff;
+    background: rgba(0, 123, 255, 0.05);
+}
+
+.migration-template-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.migration-template-meta {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Transformation Rule Tags */
+.transformation-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 2px;
+    font-size: 11px;
+    border-radius: 12px;
+    background: #e9ecef;
+    color: #495057;
+}
+
+.transformation-tag.tag-string {
+    background: #d4edda;
+    color: #155724;
+}
+
+.transformation-tag.tag-numeric {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.transformation-tag.tag-date {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.transformation-tag.tag-mapping {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .o_migration_mapping_table {
+        font-size: 12px;
+    }
+    
+    .migration-preview-panel {
+        max-height: 250px;
+    }
+}
+
+/* Status Badges */
+.migration-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.migration-status-badge.status-draft {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.migration-status-badge.status-mapping {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.migration-status-badge.status-validated {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.migration-status-badge.status-importing {
+    background: #d4edda;
+    color: #155724;
+}
+
+.migration-status-badge.status-done {
+    background: #28a745;
+    color: #fff;
+}
+
+.migration-status-badge.status-error {
+    background: #dc3545;
+    color: #fff;
+}

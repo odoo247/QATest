@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Migration Mapping Form View -->
+    <record id="view_migration_mapping_form" model="ir.ui.view">
+        <field name="name">migration.mapping.form</field>
+        <field name="model">migration.mapping</field>
+        <field name="arch" type="xml">
+            <form string="Field Mapping">
+                <sheet>
+                    <group>
+                        <group string="Source">
+                            <field name="source_column"/>
+                            <field name="source_sample_values" widget="text"/>
+                        </group>
+                        <group string="Target">
+                            <field name="target_field_id" 
+                                   domain="[('model_id', '=', parent.target_model_id)]"
+                                   options="{'no_create': True}"/>
+                            <field name="target_field_type"/>
+                            <field name="target_field_required"/>
+                            <field name="target_field_relation" invisible="target_field_type not in ('many2one', 'many2many', 'one2many')"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <group string="Mapping Configuration">
+                            <field name="mapping_type"/>
+                            <field name="default_value"/>
+                        </group>
+                        <group string="Type-Specific Settings">
+                            <field name="date_format" 
+                                   invisible="target_field_type not in ('date', 'datetime')"/>
+                            <field name="relation_search_field" 
+                                   invisible="target_field_type not in ('many2one', 'many2many')"/>
+                            <field name="relation_create_if_missing" 
+                                   invisible="target_field_type not in ('many2one', 'many2many')"/>
+                            <field name="multi_value_delimiter" 
+                                   invisible="target_field_type != 'many2many'"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Transformations" name="transformations">
+                            <field name="transformation_ids" widget="many2many_tags"/>
+                        </page>
+                        
+                        <page string="Value Mapping" name="value_mapping" 
+                              invisible="target_field_type != 'selection'">
+                            <field name="value_mapping" widget="ace" options="{'mode': 'json'}"/>
+                            <button name="action_edit_value_mapping" string="Edit Value Mapping" 
+                                    type="object" class="btn-secondary mt-2"/>
+                        </page>
+                        
+                        <page string="AI Analysis" name="ai_analysis" invisible="not ai_suggested">
+                            <group>
+                                <field name="ai_confidence" widget="progressbar"/>
+                                <field name="ai_reasoning"/>
+                            </group>
+                        </page>
+                    </notebook>
+                    
+                    <group invisible="not validation_errors">
+                        <field name="validation_errors" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Migration Mapping Tree View -->
+    <record id="view_migration_mapping_tree" model="ir.ui.view">
+        <field name="name">migration.mapping.tree</field>
+        <field name="model">migration.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Field Mappings" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="source_column"/>
+                <field name="target_field_id" options="{'no_create': True}"/>
+                <field name="target_field_type"/>
+                <field name="mapping_type"/>
+                <field name="default_value"/>
+                <field name="ai_confidence" widget="progressbar" optional="show"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Transformation Rule Views -->
+    <record id="view_transformation_rule_form" model="ir.ui.view">
+        <field name="name">migration.transformation.rule.form</field>
+        <field name="model">migration.transformation.rule</field>
+        <field name="arch" type="xml">
+            <form string="Transformation Rule">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="sequence"/>
+                            <field name="transformation_type"/>
+                            <field name="is_system" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="transformation_params" widget="ace" options="{'mode': 'json'}"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_transformation_rule_tree" model="ir.ui.view">
+        <field name="name">migration.transformation.rule.tree</field>
+        <field name="model">migration.transformation.rule</field>
+        <field name="arch" type="xml">
+            <tree string="Transformation Rules">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="transformation_type"/>
+                <field name="description"/>
+                <field name="is_system"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_transformation_rule" model="ir.actions.act_window">
+        <field name="name">Transformation Rules</field>
+        <field name="res_model">migration.transformation.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create transformation rules
+            </p>
+            <p>
+                Transformation rules define how source data is converted during import.
+            </p>
+        </field>
+    </record>
+</odoo>

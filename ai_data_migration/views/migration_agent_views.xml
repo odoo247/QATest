@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Migration Agent Form View -->
+    <record id="view_migration_agent_form" model="ir.ui.view">
+        <field name="name">migration.agent.form</field>
+        <field name="model">migration.agent</field>
+        <field name="arch" type="xml">
+            <form string="Migration Agent">
+                <header>
+                    <button name="action_start" string="Start Agent" type="object" 
+                            class="btn-primary" invisible="state != 'idle'"/>
+                    <button name="action_pause" string="Pause" type="object" 
+                            class="btn-warning" invisible="state not in ('analyzing', 'planning', 'executing')"/>
+                    <button name="action_resume" string="Resume" type="object" 
+                            class="btn-success" invisible="state != 'paused'"/>
+                    <button name="action_stop" string="Stop" type="object" 
+                            class="btn-danger" invisible="state in ('idle', 'completed', 'failed')"/>
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="idle,analyzing,planning,executing,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_projects" icon="fa-folder">
+                            <field name="project_ids" widget="statinfo" string="Projects"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Agent Name"/>
+                        </h1>
+                    </div>
+                    
+                    <!-- Pending Decisions Alert -->
+                    <div class="alert alert-warning" role="alert" 
+                         invisible="state != 'awaiting_approval'">
+                        <strong>Action Required:</strong> The agent is waiting for your decision.
+                        Review pending decisions below.
+                    </div>
+                    
+                    <group>
+                        <group string="AI Configuration">
+                            <field name="ai_provider"/>
+                            <field name="ai_model"/>
+                            <field name="autonomy_level"/>
+                        </group>
+                        <group string="Statistics">
+                            <field name="total_records_planned"/>
+                            <field name="total_records_imported"/>
+                            <field name="total_errors"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Source Files" name="sources">
+                            <field name="source_file_ids" widget="many2many_binary"/>
+                            <separator string="Target Models"/>
+                            <field name="target_model_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"
+                                   domain="[('transient', '=', False)]"/>
+                        </page>
+                        
+                        <page string="Execution Plan" name="plan" invisible="not execution_plan">
+                            <field name="execution_plan" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                        </page>
+                        
+                        <page string="Pending Decisions" name="decisions" 
+                              invisible="state != 'awaiting_approval'">
+                            <field name="pending_decision_ids" nolabel="1">
+                                <tree>
+                                    <field name="decision_type"/>
+                                    <field name="description"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="create_date"/>
+                                </tree>
+                            </field>
+                        </page>
+                        
+                        <page string="Migration Projects" name="projects">
+                            <field name="project_ids" nolabel="1" readonly="1">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="target_model_id"/>
+                                    <field name="total_rows"/>
+                                    <field name="imported_count"/>
+                                    <field name="error_count"/>
+                                    <field name="state" widget="badge"/>
+                                </tree>
+                            </field>
+                        </page>
+                        
+                        <page string="Agent Log" name="log">
+                            <field name="agent_log" widget="text" readonly="1" 
+                                   placeholder="Agent activity will appear here..."/>
+                        </page>
+                        
+                        <page string="Context" name="context">
+                            <field name="agent_context" widget="ace" options="{'mode': 'json'}"
+                                   placeholder="Agent context and memory"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Migration Agent Tree View -->
+    <record id="view_migration_agent_tree" model="ir.ui.view">
+        <field name="name">migration.agent.tree</field>
+        <field name="model">migration.agent</field>
+        <field name="arch" type="xml">
+            <tree string="Migration Agents" 
+                  decoration-success="state == 'completed'"
+                  decoration-danger="state == 'failed'"
+                  decoration-warning="state == 'awaiting_approval'"
+                  decoration-info="state in ('analyzing', 'planning', 'executing')">
+                <field name="name"/>
+                <field name="ai_provider"/>
+                <field name="autonomy_level"/>
+                <field name="total_records_planned"/>
+                <field name="total_records_imported"/>
+                <field name="total_errors"/>
+                <field name="state" widget="badge"/>
+                <field name="create_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Migration Agent Kanban View -->
+    <record id="view_migration_agent_kanban" model="ir.ui.view">
+        <field name="name">migration.agent.kanban</field>
+        <field name="model">migration.agent</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="state"/>
+                <field name="total_records_imported"/>
+                <field name="total_errors"/>
+                <templates>
+                    <t t-name="kanban-card">
+                        <div class="oe_kanban_content">
+                            <strong class="o_kanban_record_title">
+                                <field name="name"/>
+                            </strong>
+                            <div class="text-muted mt-1">
+                                <field name="ai_provider"/> - <field name="autonomy_level"/>
+                            </div>
+                            <div class="mt-2">
+                                <span class="badge bg-success me-1" t-if="record.total_records_imported.raw_value > 0">
+                                    <field name="total_records_imported"/> imported
+                                </span>
+                                <span class="badge bg-danger" t-if="record.total_errors.raw_value > 0">
+                                    <field name="total_errors"/> errors
+                                </span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Agent Decision Form -->
+    <record id="view_migration_agent_decision_form" model="ir.ui.view">
+        <field name="name">migration.agent.decision.form</field>
+        <field name="model">migration.agent.decision</field>
+        <field name="arch" type="xml">
+            <form string="Agent Decision">
+                <sheet>
+                    <group>
+                        <field name="agent_id" readonly="1"/>
+                        <field name="decision_type" readonly="1"/>
+                        <field name="state" readonly="1"/>
+                    </group>
+                    <group string="Decision Details">
+                        <field name="description" readonly="1"/>
+                    </group>
+                    <group string="Context" invisible="not context_data">
+                        <field name="context_data" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                    </group>
+                    <group string="Resolution" invisible="state == 'pending'">
+                        <field name="resolution" readonly="1"/>
+                        <field name="resolved_by" readonly="1"/>
+                        <field name="resolved_at" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_migration_agent" model="ir.actions.act_window">
+        <field name="name">Migration Agents</field>
+        <field name="res_model">migration.agent</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first AI Migration Agent
+            </p>
+            <p>
+                Migration agents autonomously handle complex data migrations by analyzing data,
+                creating migration plans, and executing imports with minimal human intervention.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_migration_agents"
+              name="AI Agents"
+              parent="menu_migration_root"
+              action="action_migration_agent"
+              sequence="15"/>
+</odoo>

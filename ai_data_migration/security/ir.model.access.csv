@@ -1,0 +1,17 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_migration_project_user,migration.project.user,model_migration_project,group_migration_user,1,1,1,0
+access_migration_project_manager,migration.project.manager,model_migration_project,group_migration_manager,1,1,1,1
+access_migration_mapping_user,migration.mapping.user,model_migration_mapping,group_migration_user,1,1,1,1
+access_migration_mapping_manager,migration.mapping.manager,model_migration_mapping,group_migration_manager,1,1,1,1
+access_migration_template_user,migration.template.user,model_migration_template,group_migration_user,1,0,0,0
+access_migration_template_manager,migration.template.manager,model_migration_template,group_migration_manager,1,1,1,1
+access_migration_template_tag_user,migration.template.tag.user,model_migration_template_tag,group_migration_user,1,0,0,0
+access_migration_template_tag_manager,migration.template.tag.manager,model_migration_template_tag,group_migration_manager,1,1,1,1
+access_migration_log_user,migration.log.user,model_migration_log,group_migration_user,1,0,0,0
+access_migration_log_manager,migration.log.manager,model_migration_log,group_migration_manager,1,1,1,1
+access_migration_transformation_rule_user,migration.transformation.rule.user,model_migration_transformation_rule,group_migration_user,1,0,0,0
+access_migration_transformation_rule_manager,migration.transformation.rule.manager,model_migration_transformation_rule,group_migration_manager,1,1,1,1
+access_migration_agent_user,migration.agent.user,model_migration_agent,group_migration_user,1,1,1,0
+access_migration_agent_manager,migration.agent.manager,model_migration_agent,group_migration_manager,1,1,1,1
+access_migration_agent_decision_user,migration.agent.decision.user,model_migration_agent_decision,group_migration_user,1,1,0,0
+access_migration_agent_decision_manager,migration.agent.decision.manager,model_migration_agent_decision,group_migration_manager,1,1,1,1

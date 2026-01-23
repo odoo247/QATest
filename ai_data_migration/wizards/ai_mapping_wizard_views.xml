@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- AI Mapping Wizard Form View -->
+    <record id="view_migration_ai_mapping_wizard_form" model="ir.ui.view">
+        <field name="name">migration.ai.mapping.wizard.form</field>
+        <field name="model">migration.ai.mapping.wizard</field>
+        <field name="arch" type="xml">
+            <form string="AI Field Mapping">
+                <field name="project_id" invisible="1"/>
+                <field name="state" invisible="1"/>
+                
+                <!-- Configure State -->
+                <div invisible="state != 'configure'">
+                    <div class="alert alert-info">
+                        <strong>AI-Powered Field Mapping</strong>
+                        <p>The AI will analyze your source data columns and suggest the best field mappings based on column names, data types, and sample values.</p>
+                    </div>
+                    
+                    <group>
+                        <group string="AI Configuration">
+                            <field name="ai_provider"/>
+                            <field name="ai_api_key" password="True" 
+                                   placeholder="Leave empty to use system configuration"/>
+                        </group>
+                        <group string="Analysis Options">
+                            <field name="include_data_quality"/>
+                            <field name="auto_create_mappings"/>
+                            <field name="confidence_threshold" 
+                                   invisible="not auto_create_mappings"
+                                   widget="percentage"/>
+                        </group>
+                    </group>
+                </div>
+                
+                <!-- Analyzing State -->
+                <div invisible="state != 'analyzing'" class="text-center py-5">
+                    <i class="fa fa-spinner fa-spin fa-3x mb-3"/>
+                    <h3>Analyzing your data...</h3>
+                    <p class="text-muted">The AI is examining your source columns and suggesting field mappings.</p>
+                </div>
+                
+                <!-- Review State -->
+                <div invisible="state != 'review'">
+                    <div class="alert alert-success" invisible="not warnings_text">
+                        <field name="warnings_text" readonly="1"/>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button name="action_select_all" string="Select All" type="object" class="btn-secondary btn-sm me-2"/>
+                        <button name="action_select_none" string="Select None" type="object" class="btn-secondary btn-sm me-2"/>
+                        <button name="action_select_high_confidence" string="Select High Confidence Only" type="object" class="btn-secondary btn-sm"/>
+                    </div>
+                    
+                    <field name="suggestion_line_ids" nolabel="1">
+                        <tree editable="bottom" decoration-success="confidence >= 0.8" 
+                              decoration-warning="confidence >= 0.5 and confidence &lt; 0.8"
+                              decoration-danger="confidence &lt; 0.5">
+                            <field name="accepted" widget="boolean_toggle"/>
+                            <field name="source_column"/>
+                            <field name="sample_values" optional="show"/>
+                            <field name="target_field_id" 
+                                   domain="[('model_id', '=', parent.project_id.target_model_id)]"
+                                   options="{'no_create': True}"/>
+                            <field name="confidence_display" string="Confidence"/>
+                            <field name="confidence" column_invisible="1"/>
+                            <field name="reasoning" optional="hide"/>
+                        </tree>
+                    </field>
+                    
+                    <notebook invisible="not data_quality_html">
+                        <page string="Data Quality Analysis" name="quality">
+                            <field name="data_quality_html" readonly="1"/>
+                        </page>
+                    </notebook>
+                </div>
+                
+                <!-- Complete State -->
+                <div invisible="state != 'complete'" class="text-center py-5">
+                    <i class="fa fa-check-circle fa-3x text-success mb-3"/>
+                    <h3>Mappings Applied Successfully!</h3>
+                    <p class="text-muted">The field mappings have been created. You can now review and adjust them as needed.</p>
+                </div>
+                
+                <footer>
+                    <button name="action_analyze" string="Analyze with AI" type="object" 
+                            class="btn-primary" invisible="state != 'configure'"/>
+                    <button name="action_apply_mappings" string="Apply Selected Mappings" type="object" 
+                            class="btn-primary" invisible="state != 'review'"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel" invisible="state == 'complete'"/>
+                    <button string="Close" class="btn-primary" special="cancel" invisible="state != 'complete'"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Migration Project Form View -->
+    <record id="view_migration_project_form" model="ir.ui.view">
+        <field name="name">migration.project.form</field>
+        <field name="model">migration.project</field>
+        <field name="arch" type="xml">
+            <form string="Migration Project">
+                <header>
+                    <button name="action_parse_file" string="Parse File" type="object" 
+                            class="btn-secondary" invisible="state != 'draft' or not source_file"/>
+                    <button name="action_ai_mapping" string="AI Mapping" type="object" 
+                            class="btn-primary" invisible="state != 'draft' or not source_columns"/>
+                    <button name="action_validate" string="Validate" type="object" 
+                            class="btn-primary" invisible="state not in ('draft', 'mapping')"/>
+                    <button name="action_start_import" string="Start Import" type="object" 
+                            class="btn-success" invisible="state != 'validated'"/>
+                    <button name="action_reset_to_draft" string="Reset to Draft" type="object" 
+                            class="btn-secondary" invisible="state not in ('error', 'done', 'cancelled')"/>
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="draft,mapping,validated,importing,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_logs" type="object" class="oe_stat_button" icon="fa-list-alt">
+                            <field name="error_count" widget="statinfo" string="Errors"/>
+                        </button>
+                        <button name="action_view_imported_records" type="object" 
+                                class="oe_stat_button" icon="fa-database"
+                                invisible="imported_count == 0">
+                            <field name="imported_count" widget="statinfo" string="Imported"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Migration Project Name"/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group string="Source Configuration">
+                            <field name="source_type"/>
+                            <field name="source_file" filename="source_filename"/>
+                            <field name="source_filename" invisible="1"/>
+                            <field name="csv_delimiter" invisible="source_type != 'csv'"/>
+                            <field name="csv_encoding" invisible="source_type != 'csv'"/>
+                            <field name="has_header"/>
+                            <field name="total_rows" readonly="1"/>
+                        </group>
+                        <group string="Target Configuration">
+                            <field name="target_model_id" options="{'no_create': True}"/>
+                            <field name="target_model_name" invisible="1"/>
+                            <field name="template_id" domain="[('target_model_id', '=', target_model_id)]"/>
+                            <button name="action_load_template" string="Apply Template" type="object" 
+                                    class="btn-link" invisible="not template_id"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <group string="Import Settings">
+                            <field name="batch_size"/>
+                            <field name="on_error"/>
+                            <field name="create_if_not_exists"/>
+                            <field name="update_existing"/>
+                            <field name="unique_field_id" 
+                                   domain="[('model_id', '=', target_model_id)]"
+                                   invisible="not update_existing"/>
+                        </group>
+                        <group string="AI Configuration">
+                            <field name="ai_provider"/>
+                            <field name="ai_api_key" password="True"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Field Mappings" name="mappings">
+                            <field name="mapping_ids" nolabel="1">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="source_column"/>
+                                    <field name="source_sample_values" optional="hide"/>
+                                    <field name="target_field_id" 
+                                           domain="[('model_id', '=', parent.target_model_id)]"
+                                           options="{'no_create': True}"/>
+                                    <field name="target_field_type" optional="show"/>
+                                    <field name="mapping_type"/>
+                                    <field name="default_value" optional="hide"/>
+                                    <field name="ai_confidence" widget="progressbar" optional="show"/>
+                                    <field name="ai_suggested" invisible="1"/>
+                                </tree>
+                            </field>
+                            <div class="text-muted mt-2">
+                                <p><strong>Tip:</strong> Use the "AI Mapping" button to automatically suggest field mappings based on column names and sample data.</p>
+                            </div>
+                        </page>
+                        
+                        <page string="Preview Data" name="preview" invisible="not preview_data">
+                            <field name="preview_data" widget="ace" options="{'mode': 'json'}" readonly="1"/>
+                        </page>
+                        
+                        <page string="Progress" name="progress" invisible="state not in ('importing', 'done', 'error')">
+                            <group>
+                                <field name="progress" widget="progressbar"/>
+                            </group>
+                            <group>
+                                <group>
+                                    <field name="imported_count"/>
+                                    <field name="skipped_count"/>
+                                </group>
+                                <group>
+                                    <field name="error_count"/>
+                                    <field name="total_rows"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <page string="Description" name="description">
+                            <field name="description" placeholder="Add notes about this migration..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Migration Project Tree View -->
+    <record id="view_migration_project_tree" model="ir.ui.view">
+        <field name="name">migration.project.tree</field>
+        <field name="model">migration.project</field>
+        <field name="arch" type="xml">
+            <tree string="Migration Projects" decoration-success="state == 'done'" 
+                  decoration-danger="state == 'error'" decoration-info="state == 'importing'">
+                <field name="name"/>
+                <field name="target_model_id"/>
+                <field name="source_type"/>
+                <field name="total_rows"/>
+                <field name="imported_count"/>
+                <field name="error_count"/>
+                <field name="state" widget="badge" 
+                       decoration-success="state == 'done'"
+                       decoration-danger="state == 'error'"
+                       decoration-warning="state == 'validated'"
+                       decoration-info="state == 'importing'"/>
+                <field name="create_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Migration Project Search View -->
+    <record id="view_migration_project_search" model="ir.ui.view">
+        <field name="name">migration.project.search</field>
+        <field name="model">migration.project</field>
+        <field name="arch" type="xml">
+            <search string="Search Migration Projects">
+                <field name="name"/>
+                <field name="target_model_id"/>
+                <filter name="filter_draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_validated" string="Validated" domain="[('state', '=', 'validated')]"/>
+                <filter name="filter_done" string="Completed" domain="[('state', '=', 'done')]"/>
+                <filter name="filter_error" string="Errors" domain="[('state', '=', 'error')]"/>
+                <separator/>
+                <filter name="filter_my" string="My Projects" domain="[('create_uid', '=', uid)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+                    <filter name="group_model" string="Target Model" context="{'group_by': 'target_model_id'}"/>
+                    <filter name="group_date" string="Created Date" context="{'group_by': 'create_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Migration Project Kanban View -->
+    <record id="view_migration_project_kanban" model="ir.ui.view">
+        <field name="name">migration.project.kanban</field>
+        <field name="model">migration.project</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="target_model_id"/>
+                <field name="state"/>
+                <field name="total_rows"/>
+                <field name="imported_count"/>
+                <field name="error_count"/>
+                <field name="progress"/>
+                <templates>
+                    <t t-name="kanban-card">
+                        <div class="oe_kanban_content">
+                            <strong class="o_kanban_record_title">
+                                <field name="name"/>
+                            </strong>
+                            <div class="text-muted">
+                                <field name="target_model_id"/>
+                            </div>
+                            <div class="mt-2">
+                                <span class="badge bg-secondary me-1">
+                                    <field name="total_rows"/> rows
+                                </span>
+                                <span class="badge bg-success me-1" t-if="record.imported_count.raw_value > 0">
+                                    <field name="imported_count"/> imported
+                                </span>
+                                <span class="badge bg-danger" t-if="record.error_count.raw_value > 0">
+                                    <field name="error_count"/> errors
+                                </span>
+                            </div>
+                            <div class="mt-2" t-if="record.state.raw_value == 'importing'">
+                                <field name="progress" widget="progressbar"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_migration_project" model="ir.actions.act_window">
+        <field name="name">Migration Projects</field>
+        <field name="res_model">migration.project</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="view_migration_project_search"/>
+        <field name="context">{'search_default_filter_my': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first data migration project
+            </p>
+            <p>
+                Import data from CSV, Excel, or JSON files into any Odoo model.
+                Use AI-powered field mapping for intelligent suggestions.
+            </p>
+        </field>
+    </record>
+</odoo>

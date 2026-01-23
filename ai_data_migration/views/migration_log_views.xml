@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Migration Log Form View -->
+    <record id="view_migration_log_form" model="ir.ui.view">
+        <field name="name">migration.log.form</field>
+        <field name="model">migration.log</field>
+        <field name="arch" type="xml">
+            <form string="Migration Log Entry" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="project_id"/>
+                            <field name="action_type"/>
+                            <field name="log_level"/>
+                            <field name="create_date"/>
+                        </group>
+                        <group>
+                            <field name="row_number"/>
+                            <field name="record_model" invisible="not record_model"/>
+                            <field name="record_id" invisible="not record_id"/>
+                            <field name="user_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="message"/>
+                    </group>
+                    <group invisible="not row_data">
+                        <field name="row_data" widget="ace" options="{'mode': 'json'}"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Migration Log Tree View -->
+    <record id="view_migration_log_tree" model="ir.ui.view">
+        <field name="name">migration.log.tree</field>
+        <field name="model">migration.log</field>
+        <field name="arch" type="xml">
+            <tree string="Migration Logs" create="false" edit="false"
+                  decoration-danger="log_level == 'error'"
+                  decoration-warning="log_level == 'warning'"
+                  decoration-success="log_level == 'success'">
+                <field name="create_date" string="Timestamp"/>
+                <field name="project_id"/>
+                <field name="action_type"/>
+                <field name="log_level" widget="badge" 
+                       decoration-danger="log_level == 'error'"
+                       decoration-warning="log_level == 'warning'"
+                       decoration-success="log_level == 'success'"/>
+                <field name="row_number"/>
+                <field name="message" widget="text"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Migration Log Search View -->
+    <record id="view_migration_log_search" model="ir.ui.view">
+        <field name="name">migration.log.search</field>
+        <field name="model">migration.log</field>
+        <field name="arch" type="xml">
+            <search string="Search Migration Logs">
+                <field name="project_id"/>
+                <field name="message"/>
+                <filter name="filter_errors" string="Errors" domain="[('log_level', '=', 'error')]"/>
+                <filter name="filter_warnings" string="Warnings" domain="[('log_level', '=', 'warning')]"/>
+                <filter name="filter_success" string="Success" domain="[('log_level', '=', 'success')]"/>
+                <separator/>
+                <filter name="filter_today" string="Today" domain="[('create_date', '>=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_project" string="Project" context="{'group_by': 'project_id'}"/>
+                    <filter name="group_action" string="Action Type" context="{'group_by': 'action_type'}"/>
+                    <filter name="group_level" string="Log Level" context="{'group_by': 'log_level'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_migration_log" model="ir.actions.act_window">
+        <field name="name">Migration Logs</field>
+        <field name="res_model">migration.log</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_migration_log_search"/>
+        <field name="context">{'search_default_filter_today': 1}</field>
+    </record>
+</odoo>
