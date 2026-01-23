@@ -214,7 +214,7 @@
     
     <menuitem id="menu_source_analyzer_root"
               name="Source Analyzer"
-              parent="menu_ai_kb_root"
+              parent="menu_ai_knowledge_root"
               sequence="5"/>
     
     <menuitem id="menu_ai_odoo_source"
