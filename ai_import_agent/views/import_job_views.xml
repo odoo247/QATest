@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================ -->
+    <!-- IMPORT JOB FORM VIEW                                         -->
+    <!-- ============================================================ -->
+    
+    <record id="view_ai_import_job_form" model="ir.ui.view">
+        <field name="name">ai.import.job.form</field>
+        <field name="model">ai.import.job</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_parse_file" type="object" string="Parse File"
+                            class="btn-primary" invisible="state != 'draft' or not file_data"/>
+                    <button name="action_auto_map" type="object" string="Auto-Map Fields"
+                            invisible="state != 'draft' or not target_model_id or not source_columns"/>
+                    <button name="action_validate" type="object" string="Validate"
+                            invisible="state not in ('draft', 'mapped') or not mapping_ids"/>
+                    <button name="action_import" type="object" string="Import"
+                            class="btn-success"
+                            invisible="state not in ('mapped', 'validated')"
+                            confirm="Start importing data?"/>
+                    <button name="action_reset" type="object" string="Reset"
+                            invisible="state == 'draft'"/>
+                    <button name="action_learn_from_errors" type="object" 
+                            string="Learn from Errors"
+                            invisible="error_count == 0"/>
+                    <field name="state" widget="statusbar" 
+                           statusbar_visible="draft,mapped,validated,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-check-circle text-success"
+                                invisible="success_count == 0">
+                            <field name="success_count" widget="statinfo" string="Success"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-exclamation-triangle text-danger"
+                                name="%(ai_import_agent.action_import_errors)d" type="action"
+                                invisible="error_count == 0">
+                            <field name="error_count" widget="statinfo" string="Errors"/>
+                        </button>
+                    </div>
+                    
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Import Job Name"/>
+                        </h1>
+                    </div>
+                    
+                    <!-- Progress bar during import -->
+                    <div class="alert alert-info" invisible="state != 'importing'">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 style="width: 50%"
+                                 aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                                <field name="progress" widget="float"/>%
+                            </div>
+                        </div>
+                        <p class="mt-2">
+                            Processing <field name="processed_rows" class="oe_inline"/> 
+                            of <field name="total_rows" class="oe_inline"/> rows...
+                        </p>
+                    </div>
+                    
+                    <!-- Error message -->
+                    <div class="alert alert-danger" invisible="not last_error">
+                        <strong>Error:</strong> <field name="last_error" nolabel="1"/>
+                    </div>
+                    
+                    <group>
+                        <group string="Source File">
+                            <field name="file_data" filename="file_name"/>
+                            <field name="file_name" invisible="1"/>
+                            <field name="file_type" readonly="1"/>
+                            <field name="total_rows" readonly="1" invisible="not total_rows"/>
+                        </group>
+                        <group string="Target">
+                            <field name="target_model_id" options="{'no_create': True}"/>
+                            <field name="target_model_name" invisible="1"/>
+                        </group>
+                    </group>
+                    
+                    <group>
+                        <group string="Options">
+                            <field name="update_existing"/>
+                            <field name="key_field_id" 
+                                   invisible="not update_existing"
+                                   domain="[('model_id', '=', target_model_id), ('ttype', 'not in', ['one2many', 'many2many'])]"/>
+                            <field name="skip_errors"/>
+                            <field name="batch_size"/>
+                        </group>
+                        <group string="Timing" invisible="not started_at">
+                            <field name="started_at" readonly="1"/>
+                            <field name="completed_at" readonly="1"/>
+                            <field name="duration" readonly="1" widget="float_time"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <page string="Field Mappings" name="mappings">
+                            <field name="mapping_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="source_column" readonly="1"/>
+                                    <field name="sample_values" readonly="1" optional="show"/>
+                                    <field name="target_field_id" 
+                                           domain="[('model_id', '=', parent.target_model_id), ('ttype', 'not in', ['one2many', 'many2many'])]"
+                                           options="{'no_create': True}"/>
+                                    <field name="target_field_type" readonly="1" optional="hide"/>
+                                    <field name="target_field_required" readonly="1" widget="boolean"/>
+                                    <field name="transform" optional="hide"/>
+                                    <field name="default_value" optional="hide"/>
+                                    <field name="confidence" widget="badge"
+                                           decoration-success="confidence == 'high'"
+                                           decoration-warning="confidence == 'medium'"
+                                           decoration-info="confidence == 'manual'"
+                                           optional="show"/>
+                                    <field name="skip"/>
+                                </list>
+                            </field>
+                        </page>
+                        
+                        <page string="Data Preview" name="preview" invisible="not preview_data">
+                            <field name="preview_html" nolabel="1"/>
+                        </page>
+                        
+                        <page string="Errors" name="errors" invisible="error_count == 0">
+                            <field name="error_ids">
+                                <list>
+                                    <field name="row_number"/>
+                                    <field name="error_type" widget="badge"/>
+                                    <field name="field_name"/>
+                                    <field name="error_message"/>
+                                    <field name="source_value" optional="show"/>
+                                    <field name="kb_suggestion" optional="show"/>
+                                    <field name="resolved" widget="boolean_toggle"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+    
+    <!-- ============================================================ -->
+    <!-- IMPORT JOB LIST VIEW                                         -->
+    <!-- ============================================================ -->
+    
+    <record id="view_ai_import_job_list" model="ir.ui.view">
+        <field name="name">ai.import.job.list</field>
+        <field name="model">ai.import.job</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="file_name"/>
+                <field name="target_model_id"/>
+                <field name="total_rows"/>
+                <field name="success_count"/>
+                <field name="error_count"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'done'"
+                       decoration-info="state in ('mapped', 'validated')"
+                       decoration-warning="state == 'importing'"
+                       decoration-danger="state == 'error'"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+    
+    <!-- ============================================================ -->
+    <!-- IMPORT JOB KANBAN VIEW                                       -->
+    <!-- ============================================================ -->
+    
+    <record id="view_ai_import_job_kanban" model="ir.ui.view">
+        <field name="name">ai.import.job.kanban</field>
+        <field name="model">ai.import.job</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state">
+                <field name="name"/>
+                <field name="state"/>
+                <field name="file_name"/>
+                <field name="target_model_id"/>
+                <field name="total_rows"/>
+                <field name="success_count"/>
+                <field name="error_count"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_card oe_kanban_global_click">
+                            <div class="oe_kanban_content">
+                                <strong><field name="name"/></strong>
+                                <div><field name="file_name"/></div>
+                                <div class="text-muted">
+                                    <field name="target_model_id"/>
+                                </div>
+                                <div class="mt-2">
+                                    <span class="badge bg-secondary">
+                                        <field name="total_rows"/> rows
+                                    </span>
+                                    <span class="badge bg-success" t-if="record.success_count.raw_value">
+                                        <field name="success_count"/> OK
+                                    </span>
+                                    <span class="badge bg-danger" t-if="record.error_count.raw_value">
+                                        <field name="error_count"/> errors
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    
+    <!-- ============================================================ -->
+    <!-- IMPORT ERROR FORM VIEW                                       -->
+    <!-- ============================================================ -->
+    
+    <record id="view_ai_import_error_form" model="ir.ui.view">
+        <field name="name">ai.import.error.form</field>
+        <field name="model">ai.import.error</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_lookup_kb" type="object" string="Lookup in KB"/>
+                    <button name="action_record_to_kb" type="object" string="Record to KB"/>
+                    <button name="action_record_fix" type="object" string="Record Fix"
+                            invisible="not resolution_notes" class="btn-success"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="job_id" readonly="1"/>
+                            <field name="row_number"/>
+                            <field name="field_name"/>
+                            <field name="error_type"/>
+                        </group>
+                        <group>
+                            <field name="resolved"/>
+                            <field name="kb_error_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Error Details">
+                        <field name="error_message" nolabel="1"/>
+                    </group>
+                    <group>
+                        <field name="source_value"/>
+                        <field name="source_data"/>
+                    </group>
+                    <group string="KB Suggestion" invisible="not kb_suggestion">
+                        <field name="kb_suggestion" nolabel="1" readonly="1"/>
+                    </group>
+                    <group string="Resolution">
+                        <field name="resolution_notes" nolabel="1"
+                               placeholder="Enter the fix that resolved this error..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    
+    <record id="view_ai_import_error_list" model="ir.ui.view">
+        <field name="name">ai.import.error.list</field>
+        <field name="model">ai.import.error</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="job_id"/>
+                <field name="row_number"/>
+                <field name="error_type" widget="badge"/>
+                <field name="field_name"/>
+                <field name="error_message"/>
+                <field name="kb_suggestion" optional="show"/>
+                <field name="resolved" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    
+    <!-- ============================================================ -->
+    <!-- ACTIONS                                                      -->
+    <!-- ============================================================ -->
+    
+    <record id="action_ai_import_job" model="ir.actions.act_window">
+        <field name="name">Import Jobs</field>
+        <field name="res_model">ai.import.job</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a New Import Job
+            </p>
+            <p>
+                The AI Import Agent helps you import data from CSV, Excel, or JSON files
+                with intelligent field mapping and error handling.
+            </p>
+        </field>
+    </record>
+    
+    <record id="action_import_errors" model="ir.actions.act_window">
+        <field name="name">Import Errors</field>
+        <field name="res_model">ai.import.error</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('job_id', '=', active_id)]</field>
+        <field name="context">{'default_job_id': active_id}</field>
+    </record>
+
+</odoo>

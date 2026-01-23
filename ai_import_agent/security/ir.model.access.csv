@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_import_job_user,ai.import.job.user,model_ai_import_job,base.group_user,1,1,1,0
+access_import_job_admin,ai.import.job.admin,model_ai_import_job,base.group_system,1,1,1,1
+access_import_mapping_user,ai.import.mapping.user,model_ai_import_mapping,base.group_user,1,1,1,1
+access_import_mapping_admin,ai.import.mapping.admin,model_ai_import_mapping,base.group_system,1,1,1,1
+access_import_error_user,ai.import.error.user,model_ai_import_error,base.group_user,1,1,1,0
+access_import_error_admin,ai.import.error.admin,model_ai_import_error,base.group_system,1,1,1,1

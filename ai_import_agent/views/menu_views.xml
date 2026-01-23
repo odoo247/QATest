@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root menu - under AI Knowledge parent -->
+    <menuitem id="menu_ai_import_root"
+              name="Import Agent"
+              parent="odoo_knowledge_module.menu_ai_knowledge_root"
+              sequence="30"/>
+    
+    <!-- Main menu items -->
+    <menuitem id="menu_import_jobs"
+              name="Import Jobs"
+              parent="menu_ai_import_root"
+              action="action_ai_import_job"
+              sequence="10"/>
+    
+    <!-- Quick create action -->
+    <record id="action_ai_import_job_new" model="ir.actions.act_window">
+        <field name="name">New Import</field>
+        <field name="res_model">ai.import.job</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+    
+    <menuitem id="menu_import_new"
+              name="New Import"
+              parent="menu_ai_import_root"
+              action="action_ai_import_job_new"
+              sequence="5"/>
+</odoo>
