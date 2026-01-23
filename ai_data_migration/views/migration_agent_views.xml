@@ -123,23 +123,41 @@
                 <field name="name"/>
                 <field name="state"/>
                 <field name="total_records_imported"/>
+                <field name="total_records_planned"/>
                 <field name="total_errors"/>
+                <field name="ai_provider"/>
+                <field name="autonomy_level"/>
                 <templates>
                     <t t-name="card">
                         <div class="oe_kanban_content">
-                            <strong class="o_kanban_record_title">
-                                <field name="name"/>
-                            </strong>
-                            <div class="text-muted mt-1">
-                                <field name="ai_provider"/> - <field name="autonomy_level"/>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <strong class="o_kanban_record_title">
+                                    <field name="name"/>
+                                </strong>
+                                <span t-attf-class="badge #{record.state.raw_value == 'completed' ? 'bg-success' : record.state.raw_value == 'failed' ? 'bg-danger' : record.state.raw_value == 'executing' ? 'bg-primary' : 'bg-secondary'}">
+                                    <field name="state"/>
+                                </span>
                             </div>
-                            <div class="mt-2">
-                                <span class="badge bg-success me-1" t-if="record.total_records_imported.raw_value > 0">
-                                    <field name="total_records_imported"/> imported
-                                </span>
-                                <span class="badge bg-danger" t-if="record.total_errors.raw_value > 0">
-                                    <field name="total_errors"/> errors
-                                </span>
+                            <div class="text-muted small mt-1">
+                                🤖 <field name="ai_provider"/> 
+                                <span class="mx-1">|</span>
+                                <field name="autonomy_level"/>
+                            </div>
+                            <div class="mt-3 border-top pt-2">
+                                <div class="row text-center small">
+                                    <div class="col-4">
+                                        <div class="fw-bold text-primary"><field name="total_records_planned"/></div>
+                                        <div class="text-muted">Planned</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="fw-bold text-success"><field name="total_records_imported"/></div>
+                                        <div class="text-muted">Imported</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="fw-bold text-danger"><field name="total_errors"/></div>
+                                        <div class="text-muted">Errors</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </t>
@@ -204,5 +222,25 @@
                 creating migration plans, and executing imports with minimal human intervention.
             </p>
         </field>
+    </record>
+    
+    <!-- Explicit view bindings -->
+    <record id="action_migration_agent_view_kanban" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_migration_agent_kanban"/>
+        <field name="act_window_id" ref="action_migration_agent"/>
+    </record>
+    <record id="action_migration_agent_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_migration_agent_tree"/>
+        <field name="act_window_id" ref="action_migration_agent"/>
+    </record>
+    <record id="action_migration_agent_view_form" model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_migration_agent_form"/>
+        <field name="act_window_id" ref="action_migration_agent"/>
     </record>
 </odoo>
