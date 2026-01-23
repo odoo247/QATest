@@ -20,6 +20,7 @@ class MigrationTemplate(models.Model):
         'ir.model',
         string='Target Model',
         required=True,
+        ondelete='cascade',
     )
     target_model_name = fields.Char(
         related='target_model_id.model',

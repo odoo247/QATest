@@ -68,6 +68,7 @@ class MigrationProject(models.Model):
         'ir.model',
         string='Target Model',
         required=True,
+        ondelete='cascade',
         domain=[('transient', '=', False)],
     )
     target_model_name = fields.Char(
