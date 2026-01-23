@@ -65,27 +65,11 @@
                         
                         <page string="Pending Decisions" name="decisions" 
                               invisible="state != 'awaiting_approval'">
-                            <field name="pending_decision_ids" nolabel="1">
-                                <tree>
-                                    <field name="decision_type"/>
-                                    <field name="description"/>
-                                    <field name="state" widget="badge"/>
-                                    <field name="create_date"/>
-                                </tree>
-                            </field>
+                            <field name="pending_decision_ids" nolabel="1" widget="one2many"/>
                         </page>
                         
                         <page string="Migration Projects" name="projects">
-                            <field name="project_ids" nolabel="1" readonly="1">
-                                <tree>
-                                    <field name="name"/>
-                                    <field name="target_model_id"/>
-                                    <field name="total_rows"/>
-                                    <field name="imported_count"/>
-                                    <field name="error_count"/>
-                                    <field name="state" widget="badge"/>
-                                </tree>
-                            </field>
+                            <field name="project_ids" nolabel="1" readonly="1" widget="one2many"/>
                         </page>
                         
                         <page string="Agent Log" name="log">
@@ -161,6 +145,20 @@
                     </t>
                 </templates>
             </kanban>
+        </field>
+    </record>
+
+    <!-- Agent Decision Tree View -->
+    <record id="view_migration_agent_decision_tree" model="ir.ui.view">
+        <field name="name">migration.agent.decision.tree</field>
+        <field name="model">migration.agent.decision</field>
+        <field name="arch" type="xml">
+            <tree string="Agent Decisions">
+                <field name="decision_type"/>
+                <field name="description"/>
+                <field name="state" widget="badge"/>
+                <field name="create_date"/>
+            </tree>
         </field>
     </record>
 

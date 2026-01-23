@@ -429,6 +429,18 @@ Respond with only valid JSON."""
         self.total_records_imported = sum(self.project_ids.mapped('imported_count'))
         self.total_errors = sum(self.project_ids.mapped('error_count'))
         self.total_records_planned = sum(self.project_ids.mapped('total_rows'))
+    
+    def action_view_projects(self):
+        """View migration projects for this agent."""
+        self.ensure_one()
+        return {
+            'name': _('Migration Projects'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'migration.project',
+            'view_mode': 'tree,form',
+            'domain': [('agent_id', '=', self.id)],
+            'context': {'default_agent_id': self.id},
+        }
 
 
 class MigrationAgentDecision(models.Model):
