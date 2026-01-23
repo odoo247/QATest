@@ -5,83 +5,83 @@
     <!-- These will be added to ai.error.pattern when the KB module is available -->
     
     <record id="error_required_field" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">null value in column .* violates not-null constraint</field>
-        <field name="fix">Ensure the required field has a value in your import file. Check the field mapping and add a default value if needed.</field>
-        <field name="success_rate">90</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">null value in column .* violates not-null constraint</field>
+        <field name="fix_explanation">Ensure the required field has a value in your import file. Check the field mapping and add a default value if needed.</field>
     </record>
     
     <record id="error_unique_constraint" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">duplicate key value violates unique constraint</field>
-        <field name="fix">A record with this value already exists. Enable "Update Existing Records" and set the Key Field, or remove duplicates from your import file.</field>
-        <field name="success_rate">85</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">duplicate key value violates unique constraint</field>
+        <field name="fix_explanation">A record with this value already exists. Enable "Update Existing Records" and set the Key Field, or remove duplicates from your import file.</field>
     </record>
     
     <record id="error_foreign_key" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">violates foreign key constraint</field>
-        <field name="fix">The referenced record does not exist. Import the parent records first, or check that the reference values in your file match existing records.</field>
-        <field name="success_rate">80</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">violates foreign key constraint</field>
+        <field name="fix_explanation">The referenced record does not exist. Import the parent records first, or check that the reference values in your file match existing records.</field>
     </record>
     
     <record id="error_invalid_date" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">invalid input syntax for type date</field>
-        <field name="fix">Date format is incorrect. Use YYYY-MM-DD format (e.g., 2024-01-15) or DD/MM/YYYY format.</field>
-        <field name="success_rate">95</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">invalid input syntax for type date</field>
+        <field name="fix_explanation">Date format is incorrect. Use YYYY-MM-DD format (e.g., 2024-01-15) or DD/MM/YYYY format.</field>
     </record>
     
     <record id="error_invalid_number" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">invalid input syntax for type numeric</field>
-        <field name="fix">Number format is incorrect. Remove currency symbols, use dot for decimal separator, and ensure no text in numeric fields.</field>
-        <field name="success_rate">95</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">invalid input syntax for type numeric</field>
+        <field name="fix_explanation">Number format is incorrect. Remove currency symbols, use dot for decimal separator, and ensure no text in numeric fields.</field>
     </record>
     
     <record id="error_many2one_not_found" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">cannot find record for</field>
-        <field name="fix">The related record was not found. Use the exact name or ID of an existing record, or create the related record first.</field>
-        <field name="success_rate">85</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">cannot find record for</field>
+        <field name="fix_explanation">The related record was not found. Use the exact name or ID of an existing record, or create the related record first.</field>
     </record>
     
     <record id="error_selection_invalid" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">Value .* not in selection</field>
-        <field name="fix">The value is not a valid option for this selection field. Check the allowed values in Odoo and update your import file.</field>
-        <field name="success_rate">90</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">Value .* not in selection</field>
+        <field name="fix_explanation">The value is not a valid option for this selection field. Check the allowed values in Odoo and update your import file.</field>
     </record>
     
     <record id="error_access_denied" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">Access Denied</field>
-        <field name="fix">You don't have permission to create/modify records in this model. Contact your administrator to get the required access rights.</field>
-        <field name="success_rate">100</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">Access Denied</field>
+        <field name="fix_explanation">You don't have permission to create/modify records in this model. Contact your administrator to get the required access rights.</field>
     </record>
     
     <record id="error_constraint_check" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">new row .* violates check constraint</field>
-        <field name="fix">The data violates a validation rule. Common issues: negative quantities, dates in wrong order, invalid percentages. Check the field constraints.</field>
-        <field name="success_rate">75</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">other</field>
+        <field name="error_message">new row .* violates check constraint</field>
+        <field name="fix_explanation">The data violates a validation rule. Common issues: negative quantities, dates in wrong order, invalid percentages. Check the field constraints.</field>
     </record>
     
     <record id="error_encoding" model="ai.error.pattern">
-        <field name="version">18.0</field>
-        <field name="task_type">import</field>
-        <field name="error_text">codec can't decode</field>
-        <field name="fix">File encoding issue. Save your CSV file with UTF-8 encoding. In Excel, use "Save As" and choose "CSV UTF-8".</field>
-        <field name="success_rate">95</field>
+        <field name="odoo_version">all</field>
+        <field name="task_type">general</field>
+        <field name="error_type">import_error</field>
+        <field name="error_message">codec can't decode</field>
+        <field name="fix_explanation">File encoding issue. Save your CSV file with UTF-8 encoding. In Excel, use "Save As" and choose "CSV UTF-8".</field>
     </record>
 
 </odoo>

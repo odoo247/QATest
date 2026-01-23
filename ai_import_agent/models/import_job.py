@@ -462,10 +462,10 @@ class AiImportJob(models.Model):
             if len(errors) >= 2:  # Only learn from repeated errors
                 # Record to KB
                 self.kb_record_error(
-                    version=self.env['ir.module.module'].search([
+                    odoo_version=self.env['ir.module.module'].search([
                         ('name', '=', 'base')
                     ], limit=1).installed_version or '18.0',
-                    task_type='import',
+                    task_type='general',
                     error_text=errors[0].error_message,
                     wrong_code=errors[0].source_data or '',
                 )
@@ -813,7 +813,7 @@ class AiImportJob(models.Model):
     def _lookup_kb_error(self, error_message):
         """Look up error in KB for known fixes."""
         try:
-            patterns = self.kb_get_error_patterns(error_message, 'import')
+            patterns = self.kb_get_error_patterns(error_message, 'general')
             if patterns:
                 return patterns[0].get('fix') or patterns[0].get('explanation')
         except Exception:

@@ -49,7 +49,7 @@ class AiImportError(models.Model):
             return
         
         try:
-            patterns = self.job_id.kb_get_error_patterns(self.error_message, 'import')
+            patterns = self.job_id.kb_get_error_patterns(self.error_message, 'general')
             if patterns:
                 self.kb_suggestion = patterns[0].get('fix') or patterns[0].get('explanation')
         except Exception:
@@ -63,8 +63,8 @@ class AiImportError(models.Model):
             return
         
         error = self.job_id.kb_record_error(
-            version='18.0',
-            task_type='import',
+            odoo_version='18.0',
+            task_type='general',
             error_text=self.error_message,
             wrong_code=self.source_data or self.source_value or '',
         )
