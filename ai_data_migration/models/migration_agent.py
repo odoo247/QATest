@@ -437,7 +437,7 @@ Respond with only valid JSON."""
             'name': _('Migration Projects'),
             'type': 'ir.actions.act_window',
             'res_model': 'migration.project',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('agent_id', '=', self.id)],
             'context': {'default_agent_id': self.id},
         }

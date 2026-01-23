@@ -71,7 +71,7 @@
         <field name="name">migration.mapping.tree</field>
         <field name="model">migration.mapping</field>
         <field name="arch" type="xml">
-            <tree string="Field Mappings" editable="bottom">
+            <list string="Field Mappings" editable="bottom">
                 <field name="sequence" widget="handle"/>
                 <field name="source_column"/>
                 <field name="target_field_id" options="{'no_create': True}"/>
@@ -79,7 +79,7 @@
                 <field name="mapping_type"/>
                 <field name="default_value"/>
                 <field name="ai_confidence" widget="progressbar" optional="show"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -113,20 +113,20 @@
         <field name="name">migration.transformation.rule.tree</field>
         <field name="model">migration.transformation.rule</field>
         <field name="arch" type="xml">
-            <tree string="Transformation Rules">
+            <list string="Transformation Rules">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="transformation_type"/>
                 <field name="description"/>
                 <field name="is_system"/>
-            </tree>
+            </list>
         </field>
     </record>
 
     <record id="action_transformation_rule" model="ir.actions.act_window">
         <field name="name">Transformation Rules</field>
         <field name="res_model">migration.transformation.rule</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Create transformation rules

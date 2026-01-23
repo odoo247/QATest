@@ -714,7 +714,7 @@ class MigrationProject(models.Model):
             'name': _('Migration Logs'),
             'type': 'ir.actions.act_window',
             'res_model': 'migration.log',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('project_id', '=', self.id)],
             'context': {'default_project_id': self.id},
         }
@@ -725,7 +725,7 @@ class MigrationProject(models.Model):
             'name': _('Imported Records'),
             'type': 'ir.actions.act_window',
             'res_model': self.target_model_name,
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('create_uid', '=', self.env.uid)],  # Simplified filter
         }
     

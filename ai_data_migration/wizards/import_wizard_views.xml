@@ -41,10 +41,10 @@
                     <button name="action_detect_values" string="Detect Values from Data" type="object" class="btn-secondary"/>
                 </group>
                 <field name="line_ids" nolabel="1">
-                    <tree editable="bottom">
+                    <list editable="bottom">
                         <field name="source_value"/>
                         <field name="target_value"/>
-                    </tree>
+                    </list>
                 </field>
                 <footer>
                     <button name="action_save" string="Save" type="object" class="btn-primary"/>

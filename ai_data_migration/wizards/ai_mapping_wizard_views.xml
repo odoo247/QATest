@@ -52,7 +52,7 @@
                     </div>
                     
                     <field name="suggestion_line_ids" nolabel="1">
-                        <tree editable="bottom" decoration-success="confidence >= 0.8" 
+                        <list editable="bottom" decoration-success="confidence >= 0.8" 
                               decoration-warning="confidence >= 0.5 and confidence &lt; 0.8"
                               decoration-danger="confidence &lt; 0.5">
                             <field name="accepted" widget="boolean_toggle"/>
@@ -63,7 +63,7 @@
                             <field name="confidence_display" string="Confidence"/>
                             <field name="confidence" column_invisible="1"/>
                             <field name="reasoning" optional="hide"/>
-                        </tree>
+                        </list>
                     </field>
                     
                     <notebook invisible="not data_quality_html">

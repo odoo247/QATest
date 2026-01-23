@@ -97,7 +97,7 @@
         <field name="name">migration.agent.tree</field>
         <field name="model">migration.agent</field>
         <field name="arch" type="xml">
-            <tree string="Migration Agents" 
+            <list string="Migration Agents" 
                   decoration-success="state == 'completed'"
                   decoration-danger="state == 'failed'"
                   decoration-warning="state == 'awaiting_approval'"
@@ -110,7 +110,7 @@
                 <field name="total_errors"/>
                 <field name="state" widget="badge"/>
                 <field name="create_date"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -153,12 +153,12 @@
         <field name="name">migration.agent.decision.tree</field>
         <field name="model">migration.agent.decision</field>
         <field name="arch" type="xml">
-            <tree string="Agent Decisions">
+            <list string="Agent Decisions">
                 <field name="decision_type"/>
                 <field name="description"/>
                 <field name="state" widget="badge"/>
                 <field name="create_date"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -194,7 +194,7 @@
     <record id="action_migration_agent" model="ir.actions.act_window">
         <field name="name">Migration Agents</field>
         <field name="res_model">migration.agent</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_mode">kanban,list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Create your first AI Migration Agent
