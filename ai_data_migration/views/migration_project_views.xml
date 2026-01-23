@@ -74,19 +74,18 @@
                     
                     <notebook>
                         <page string="Field Mappings" name="mappings">
-                            <field name="mapping_ids" nolabel="1">
+                            <field name="mapping_ids" nolabel="1" context="{'default_project_id': active_id}">
                                 <tree editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="source_column"/>
                                     <field name="source_sample_values" optional="hide"/>
                                     <field name="target_field_id" 
-                                           domain="[('model_id', '=', parent.target_model_id)]"
                                            options="{'no_create': True}"/>
                                     <field name="target_field_type" optional="show"/>
                                     <field name="mapping_type"/>
                                     <field name="default_value" optional="hide"/>
                                     <field name="ai_confidence" widget="progressbar" optional="show"/>
-                                    <field name="ai_suggested" invisible="1"/>
+                                    <field name="ai_suggested" column_invisible="1"/>
                                 </tree>
                             </field>
                             <div class="text-muted mt-2">

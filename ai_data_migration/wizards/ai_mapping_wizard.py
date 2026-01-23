@@ -306,7 +306,6 @@ class MigrationAIMappingWizardLine(models.TransientModel):
     target_field_id = fields.Many2one(
         'ir.model.fields',
         string='Target Field',
-        domain="[('model_id', '=', parent.project_id.target_model_id)]",
     )
     
     # AI Analysis

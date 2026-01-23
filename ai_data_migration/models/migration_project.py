@@ -753,3 +753,18 @@ class MigrationProject(models.Model):
         
         self.template_id.apply_to_project(self)
         return True
+    
+    @api.model
+    def process_queued_imports(self):
+        """Process queued migration imports (called by cron)."""
+        projects = self.search([
+            ('state', '=', 'validated'),
+        ], limit=5)
+        
+        for project in projects:
+            try:
+                project._run_import()
+            except Exception as e:
+                _logger.error(f"Queued import failed for project {project.id}: {e}")
+                project.state = 'error'
+                project._log_action('import_error', f'Queued import failed: {str(e)}')

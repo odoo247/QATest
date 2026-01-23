@@ -59,7 +59,6 @@
                             <field name="source_column"/>
                             <field name="sample_values" optional="show"/>
                             <field name="target_field_id" 
-                                   domain="[('model_id', '=', parent.project_id.target_model_id)]"
                                    options="{'no_create': True}"/>
                             <field name="confidence_display" string="Confidence"/>
                             <field name="confidence" column_invisible="1"/>
