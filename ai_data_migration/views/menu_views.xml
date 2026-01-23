@@ -19,6 +19,12 @@
               action="action_migration_template"
               sequence="20"/>
     
+    <menuitem id="menu_migration_agents"
+              name="AI Agents"
+              parent="menu_migration_root"
+              action="action_migration_agent"
+              sequence="15"/>
+    
     <!-- Configuration Menu -->
     <menuitem id="menu_migration_config"
               name="Configuration"

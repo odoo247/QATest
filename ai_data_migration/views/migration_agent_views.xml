@@ -205,11 +205,4 @@
             </p>
         </field>
     </record>
-
-    <!-- Menu Item -->
-    <menuitem id="menu_migration_agents"
-              name="AI Agents"
-              parent="menu_migration_root"
-              action="action_migration_agent"
-              sequence="15"/>
 </odoo>

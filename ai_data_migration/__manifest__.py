@@ -47,9 +47,9 @@ Typical Use Cases:
         'views/migration_log_views.xml',
         'views/migration_project_views.xml',
         'views/migration_agent_views.xml',
-        'views/menu_views.xml',
         'wizards/import_wizard_views.xml',
         'wizards/ai_mapping_wizard_views.xml',
+        'views/menu_views.xml',
     ],
     'assets': {
         'web.assets_backend': [
