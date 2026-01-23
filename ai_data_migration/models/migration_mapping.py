@@ -236,6 +236,7 @@ class MigrationTransformationRule(models.Model):
         ('add', 'Add'),
         ('subtract', 'Subtract'),
         ('abs', 'Absolute Value'),
+        ('clean_numeric', 'Clean Numeric'),
         
         # Date transformations
         ('date_format', 'Reformat Date'),
