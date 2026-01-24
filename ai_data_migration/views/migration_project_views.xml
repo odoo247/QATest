@@ -5,6 +5,7 @@
         <field name="name">ai_data_migration.migration.project.form</field>
         <field name="model">migration.project</field>
         <field name="priority">1</field>
+        <field name="mode">primary</field>
         <field name="arch" type="xml">
             <form string="Migration Project">
                 <header>
@@ -120,6 +121,7 @@
         <field name="name">ai_data_migration.migration.project.list</field>
         <field name="model">migration.project</field>
         <field name="priority">1</field>
+        <field name="mode">primary</field>
         <field name="arch" type="xml">
             <list string="Migration Projects" decoration-success="state == 'done'" 
                   decoration-danger="state == 'error'" decoration-info="state == 'importing'">
@@ -167,6 +169,7 @@
         <field name="name">ai_data_migration.migration.project.kanban</field>
         <field name="model">migration.project</field>
         <field name="priority">1</field>
+        <field name="mode">primary</field>
         <field name="arch" type="xml">
             <kanban default_group_by="state" class="o_kanban_small_column">
                 <field name="name"/>
@@ -211,6 +214,10 @@
         <field name="name">Migration Projects</field>
         <field name="res_model">migration.project</field>
         <field name="view_mode">list,kanban,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_migration_project_tree')}),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_migration_project_kanban')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_migration_project_form')})]"/>
         <field name="search_view_id" ref="view_migration_project_search"/>
         <field name="context">{'search_default_filter_my': 1}</field>
         <field name="help" type="html">
@@ -222,25 +229,5 @@
                 Use AI-powered field mapping for intelligent suggestions.
             </p>
         </field>
-    </record>
-    
-    <!-- Explicit view bindings -->
-    <record id="action_migration_project_view_list" model="ir.actions.act_window.view">
-        <field name="sequence">1</field>
-        <field name="view_mode">list</field>
-        <field name="view_id" ref="view_migration_project_tree"/>
-        <field name="act_window_id" ref="action_migration_project"/>
-    </record>
-    <record id="action_migration_project_view_kanban" model="ir.actions.act_window.view">
-        <field name="sequence">2</field>
-        <field name="view_mode">kanban</field>
-        <field name="view_id" ref="view_migration_project_kanban"/>
-        <field name="act_window_id" ref="action_migration_project"/>
-    </record>
-    <record id="action_migration_project_view_form" model="ir.actions.act_window.view">
-        <field name="sequence">3</field>
-        <field name="view_mode">form</field>
-        <field name="view_id" ref="view_migration_project_form"/>
-        <field name="act_window_id" ref="action_migration_project"/>
     </record>
 </odoo>

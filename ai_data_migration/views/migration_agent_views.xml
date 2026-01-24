@@ -5,6 +5,7 @@
         <field name="name">ai_data_migration.migration.agent.form</field>
         <field name="model">migration.agent</field>
         <field name="priority">1</field>
+        <field name="mode">primary</field>
         <field name="arch" type="xml">
             <form string="Migration Agent">
                 <header>
@@ -98,6 +99,7 @@
         <field name="name">ai_data_migration.migration.agent.list</field>
         <field name="model">migration.agent</field>
         <field name="priority">1</field>
+        <field name="mode">primary</field>
         <field name="arch" type="xml">
             <list string="Migration Agents" 
                   decoration-success="state == 'completed'"
@@ -121,6 +123,7 @@
         <field name="name">ai_data_migration.migration.agent.kanban</field>
         <field name="model">migration.agent</field>
         <field name="priority">1</field>
+        <field name="mode">primary</field>
         <field name="arch" type="xml">
             <kanban default_group_by="state" class="o_kanban_small_column">
                 <field name="name"/>
@@ -216,6 +219,10 @@
         <field name="name">Migration Agents</field>
         <field name="res_model">migration.agent</field>
         <field name="view_mode">kanban,list,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_migration_agent_kanban')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_migration_agent_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_migration_agent_form')})]"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Create your first AI Migration Agent
@@ -225,25 +232,5 @@
                 creating migration plans, and executing imports with minimal human intervention.
             </p>
         </field>
-    </record>
-    
-    <!-- Explicit view bindings -->
-    <record id="action_migration_agent_view_kanban" model="ir.actions.act_window.view">
-        <field name="sequence">1</field>
-        <field name="view_mode">kanban</field>
-        <field name="view_id" ref="view_migration_agent_kanban"/>
-        <field name="act_window_id" ref="action_migration_agent"/>
-    </record>
-    <record id="action_migration_agent_view_list" model="ir.actions.act_window.view">
-        <field name="sequence">2</field>
-        <field name="view_mode">list</field>
-        <field name="view_id" ref="view_migration_agent_tree"/>
-        <field name="act_window_id" ref="action_migration_agent"/>
-    </record>
-    <record id="action_migration_agent_view_form" model="ir.actions.act_window.view">
-        <field name="sequence">3</field>
-        <field name="view_mode">form</field>
-        <field name="view_id" ref="view_migration_agent_form"/>
-        <field name="act_window_id" ref="action_migration_agent"/>
     </record>
 </odoo>
