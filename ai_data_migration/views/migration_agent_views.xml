@@ -2,7 +2,7 @@
 <odoo>
     <!-- Migration Agent Form View -->
     <record id="view_migration_agent_form" model="ir.ui.view">
-        <field name="name">migration.agent.form</field>
+        <field name="name">ai_data_migration.migration.agent.form</field>
         <field name="model">migration.agent</field>
         <field name="priority">1</field>
         <field name="arch" type="xml">
@@ -95,7 +95,7 @@
 
     <!-- Migration Agent Tree View -->
     <record id="view_migration_agent_tree" model="ir.ui.view">
-        <field name="name">migration.agent.tree</field>
+        <field name="name">ai_data_migration.migration.agent.list</field>
         <field name="model">migration.agent</field>
         <field name="priority">1</field>
         <field name="arch" type="xml">
@@ -118,7 +118,7 @@
 
     <!-- Migration Agent Kanban View -->
     <record id="view_migration_agent_kanban" model="ir.ui.view">
-        <field name="name">migration.agent.kanban</field>
+        <field name="name">ai_data_migration.migration.agent.kanban</field>
         <field name="model">migration.agent</field>
         <field name="priority">1</field>
         <field name="arch" type="xml">

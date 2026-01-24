@@ -2,7 +2,7 @@
 <odoo>
     <!-- Migration Project Form View -->
     <record id="view_migration_project_form" model="ir.ui.view">
-        <field name="name">migration.project.form</field>
+        <field name="name">ai_data_migration.migration.project.form</field>
         <field name="model">migration.project</field>
         <field name="priority">1</field>
         <field name="arch" type="xml">
@@ -117,7 +117,7 @@
 
     <!-- Migration Project Tree View -->
     <record id="view_migration_project_tree" model="ir.ui.view">
-        <field name="name">migration.project.tree</field>
+        <field name="name">ai_data_migration.migration.project.list</field>
         <field name="model">migration.project</field>
         <field name="priority">1</field>
         <field name="arch" type="xml">
@@ -141,7 +141,7 @@
 
     <!-- Migration Project Search View -->
     <record id="view_migration_project_search" model="ir.ui.view">
-        <field name="name">migration.project.search</field>
+        <field name="name">ai_data_migration.migration.project.search</field>
         <field name="model">migration.project</field>
         <field name="arch" type="xml">
             <search string="Search Migration Projects">
@@ -164,7 +164,7 @@
 
     <!-- Migration Project Kanban View -->
     <record id="view_migration_project_kanban" model="ir.ui.view">
-        <field name="name">migration.project.kanban</field>
+        <field name="name">ai_data_migration.migration.project.kanban</field>
         <field name="model">migration.project</field>
         <field name="priority">1</field>
         <field name="arch" type="xml">
