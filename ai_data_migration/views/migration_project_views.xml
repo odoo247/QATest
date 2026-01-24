@@ -4,6 +4,7 @@
     <record id="view_migration_project_form" model="ir.ui.view">
         <field name="name">migration.project.form</field>
         <field name="model">migration.project</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <form string="Migration Project">
                 <header>
@@ -118,6 +119,7 @@
     <record id="view_migration_project_tree" model="ir.ui.view">
         <field name="name">migration.project.tree</field>
         <field name="model">migration.project</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <list string="Migration Projects" decoration-success="state == 'done'" 
                   decoration-danger="state == 'error'" decoration-info="state == 'importing'">
@@ -164,6 +166,7 @@
     <record id="view_migration_project_kanban" model="ir.ui.view">
         <field name="name">migration.project.kanban</field>
         <field name="model">migration.project</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <kanban default_group_by="state" class="o_kanban_small_column">
                 <field name="name"/>

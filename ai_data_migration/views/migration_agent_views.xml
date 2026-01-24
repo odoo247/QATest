@@ -4,6 +4,7 @@
     <record id="view_migration_agent_form" model="ir.ui.view">
         <field name="name">migration.agent.form</field>
         <field name="model">migration.agent</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <form string="Migration Agent">
                 <header>
@@ -96,6 +97,7 @@
     <record id="view_migration_agent_tree" model="ir.ui.view">
         <field name="name">migration.agent.tree</field>
         <field name="model">migration.agent</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <list string="Migration Agents" 
                   decoration-success="state == 'completed'"
@@ -118,6 +120,7 @@
     <record id="view_migration_agent_kanban" model="ir.ui.view">
         <field name="name">migration.agent.kanban</field>
         <field name="model">migration.agent</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <kanban default_group_by="state" class="o_kanban_small_column">
                 <field name="name"/>
